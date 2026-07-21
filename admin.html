@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — Mavia Yaseen Portfolio</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+  :root{
+    --bg:#0B0F1A;--surface:#131826;--surface-2:#1A2033;--border:#232B40;
+    --text:#E8EAF0;--muted:#8B92A8;--amber:#F2A93B;--teal:#4FD1C5;--danger:#F2555A;
+    --font-display:'Space Grotesk',sans-serif;--font-body:'Inter',sans-serif;--font-mono:'JetBrains Mono',monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:var(--font-body);min-height:100vh;}
+  .wrap{max-width:760px;margin:0 auto;padding:60px 24px 100px;}
+  h1{font-family:var(--font-display);font-size:28px;margin-bottom:6px;}
+  .sub{color:var(--muted);font-family:var(--font-mono);font-size:13px;margin-bottom:36px;}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:28px;margin-bottom:24px;}
+  label{display:block;font-family:var(--font-mono);font-size:12px;color:var(--teal);margin-bottom:6px;margin-top:16px;}
+  label:first-child{margin-top:0;}
+  input,textarea{
+    width:100%;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;
+    padding:11px 14px;color:var(--text);font-family:var(--font-body);font-size:14px;
+  }
+  input:focus,textarea:focus{outline:none;border-color:var(--teal);}
+  textarea{min-height:80px;resize:vertical;}
+  .hint{font-size:12px;color:var(--muted);margin-top:4px;}
+  .btn{
+    font-family:var(--font-mono);font-size:14px;padding:12px 24px;border-radius:8px;
+    border:none;cursor:pointer;font-weight:500;margin-top:20px;
+  }
+  .btn-primary{background:var(--amber);color:#0B0F1A;}
+  .btn-danger{background:transparent;color:var(--danger);border:1px solid var(--danger);padding:8px 14px;font-size:12px;}
+  .btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border);padding:8px 14px;font-size:12px;}
+  .msg{font-family:var(--font-mono);font-size:13px;margin-top:14px;}
+  .msg.err{color:var(--danger);}
+  .msg.ok{color:var(--teal);}
+  .proj-row{
+    display:flex;gap:16px;align-items:center;padding:14px 0;border-bottom:1px solid var(--border);
+  }
+  .proj-row:last-child{border-bottom:none;}
+  .proj-row img{width:64px;height:44px;object-fit:cover;border-radius:6px;background:var(--surface-2);}
+  .proj-row .info{flex-grow:1;}
+  .proj-row .title{font-family:var(--font-display);font-weight:600;font-size:15px;}
+  .proj-row .tags{font-family:var(--font-mono);font-size:11px;color:var(--muted);margin-top:2px;}
+  .proj-row .actions{display:flex;gap:8px;}
+  .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;}
+  #logoutBtn{display:none;}
+  .required::after{content:" *";color:var(--danger);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div>
+      <h1>Portfolio Admin</h1>
+      <div class="sub">manage your projects</div>
+    </div>
+    <button class="btn btn-ghost" id="logoutBtn">Log out</button>
+  </div>
+
+  <!-- LOGIN -->
+  <div class="card" id="loginCard">
+    <label class="required">Email</label>
+    <input type="email" id="loginEmail" autocomplete="username">
+    <label class="required">Password</label>
+    <input type="password" id="loginPass" autocomplete="current-password">
+    <button class="btn btn-primary" id="loginBtn">Log In</button>
+    <div class="msg" id="loginMsg"></div>
+    <div class="hint" style="margin-top:14px">Not configured yet? Follow SETUP.md to connect your free Supabase backend before logging in here.</div>
+  </div>
+
+  <!-- ADMIN AREA (hidden until logged in) -->
+  <div id="adminArea" style="display:none">
+    <div class="card">
+      <h1 style="font-size:19px" id="formTitle">Add Project</h1>
+      <input type="hidden" id="editId">
+      <label class="required">Title</label>
+      <input id="fTitle" placeholder="e.g. E-Commerce Website">
+      <label>Subtitle</label>
+      <input id="fSubtitle" placeholder="e.g. Full online store">
+      <label>Description</label>
+      <textarea id="fDesc" placeholder="What it does, what you built..."></textarea>
+      <label>Tags (comma separated)</label>
+      <input id="fTags" placeholder="React, Node.js, MongoDB">
+      <label>Live link <span style="color:var(--muted);font-weight:400">(leave blank if none)</span></label>
+      <input id="fLive" placeholder="https://...">
+      <label>GitHub link <span style="color:var(--muted);font-weight:400">(leave blank if none)</span></label>
+      <input id="fGithub" placeholder="https://github.com/...">
+      <label>Project image</label>
+      <input type="file" id="fImage" accept="image/*">
+      <div class="hint" id="currentImgHint"></div>
+      <button class="btn btn-primary" id="saveBtn">Save Project</button>
+      <button class="btn btn-ghost" id="cancelEditBtn" style="display:none">Cancel edit</button>
+      <div class="msg" id="formMsg"></div>
+    </div>
+
+    <div class="card">
+      <h1 style="font-size:19px;margin-bottom:16px">Your Projects</h1>
+      <div id="projList"></div>
+    </div>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script>
+if(!supabaseClient){
+  document.getElementById('loginMsg').textContent = "Backend not configured — open config.js and add your Supabase URL/key (see SETUP.md).";
+  document.getElementById('loginMsg').classList.add('err');
+}
+
+const loginBtn = document.getElementById('loginBtn');
+const logoutBtn = document.getElementById('logoutBtn');
+const loginCard = document.getElementById('loginCard');
+const adminArea = document.getElementById('adminArea');
+const loginMsg = document.getElementById('loginMsg');
+
+async function checkSession(){
+  if(!supabaseClient) return;
+  const { data:{ session } } = await supabaseClient.auth.getSession();
+  if(session){
+    loginCard.style.display = 'none';
+    adminArea.style.display = 'block';
+    logoutBtn.style.display = 'inline-block';
+    loadProjects();
+  } else {
+    loginCard.style.display = 'block';
+    adminArea.style.display = 'none';
+    logoutBtn.style.display = 'none';
+  }
+}
+
+loginBtn.addEventListener('click', async ()=>{
+  if(!supabaseClient) return;
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPass').value;
+  loginMsg.textContent = "Logging in...";
+  loginMsg.className = 'msg';
+  const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+  if(error){
+    loginMsg.textContent = error.message;
+    loginMsg.className = 'msg err';
+  } else {
+    checkSession();
+  }
+});
+
+logoutBtn.addEventListener('click', async ()=>{
+  await supabaseClient.auth.signOut();
+  checkSession();
+});
+
+checkSession();
+
+// ---- Project CRUD ----
+const fTitle=document.getElementById('fTitle'), fSubtitle=document.getElementById('fSubtitle'),
+      fDesc=document.getElementById('fDesc'), fTags=document.getElementById('fTags'),
+      fLive=document.getElementById('fLive'), fGithub=document.getElementById('fGithub'),
+      fImage=document.getElementById('fImage'), editId=document.getElementById('editId'),
+      formMsg=document.getElementById('formMsg'), formTitle=document.getElementById('formTitle'),
+      cancelEditBtn=document.getElementById('cancelEditBtn'), currentImgHint=document.getElementById('currentImgHint');
+
+function resetForm(){
+  editId.value=''; fTitle.value=''; fSubtitle.value=''; fDesc.value=''; fTags.value='';
+  fLive.value=''; fGithub.value=''; fImage.value=''; formTitle.textContent='Add Project';
+  cancelEditBtn.style.display='none'; currentImgHint.textContent='';
+}
+
+cancelEditBtn.addEventListener('click', resetForm);
+
+document.getElementById('saveBtn').addEventListener('click', async ()=>{
+  if(!fTitle.value.trim()){
+    formMsg.textContent = "Title is required.";
+    formMsg.className = 'msg err';
+    return;
+  }
+  formMsg.textContent = "Saving...";
+  formMsg.className = 'msg';
+
+  let image_url = null;
+  const existingId = editId.value;
+
+  if(fImage.files[0]){
+    const file = fImage.files[0];
+    const path = `${Date.now()}_${file.name}`;
+    const { error: upErr } = await supabaseClient.storage.from('project-images').upload(path, file);
+    if(upErr){
+      formMsg.textContent = "Image upload failed: " + upErr.message;
+      formMsg.className = 'msg err';
+      return;
+    }
+    image_url = supabaseClient.storage.from('project-images').getPublicUrl(path).data.publicUrl;
+  }
+
+  const payload = {
+    title: fTitle.value.trim(),
+    subtitle: fSubtitle.value.trim() || null,
+    description: fDesc.value.trim() || null,
+    tags: fTags.value.split(',').map(t=>t.trim()).filter(Boolean),
+    live_link: fLive.value.trim() || null,
+    github_link: fGithub.value.trim() || null,
+  };
+  if(image_url) payload.image_url = image_url;
+
+  let result;
+  if(existingId){
+    result = await supabaseClient.from('projects').update(payload).eq('id', existingId);
+  } else {
+    result = await supabaseClient.from('projects').insert(payload);
+  }
+
+  if(result.error){
+    formMsg.textContent = "Error: " + result.error.message;
+    formMsg.className = 'msg err';
+  } else {
+    formMsg.textContent = "Saved.";
+    formMsg.className = 'msg ok';
+    resetForm();
+    loadProjects();
+  }
+});
+
+async function loadProjects(){
+  const list = document.getElementById('projList');
+  const { data, error } = await supabaseClient.from('projects').select('*').order('created_at', {ascending:false});
+  if(error){ list.innerHTML = `<div class="msg err">${error.message}</div>`; return; }
+  if(!data.length){ list.innerHTML = `<div class="hint">No projects yet — add your first one above.</div>`; return; }
+  list.innerHTML = data.map(p=>`
+    <div class="proj-row">
+      <img src="${p.image_url || ''}" onerror="this.style.visibility='hidden'">
+      <div class="info">
+        <div class="title">${p.title}</div>
+        <div class="tags">${(p.tags||[]).join(' · ')}${p.live_link ? ' · live link' : ''}${p.github_link ? ' · github' : ''}</div>
+      </div>
+      <div class="actions">
+        <button class="btn btn-ghost" onclick='editProject(${JSON.stringify(p).replace(/'/g,"&apos;")})'>Edit</button>
+        <button class="btn btn-danger" onclick="deleteProject('${p.id}')">Delete</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function editProject(p){
+  editId.value = p.id;
+  fTitle.value = p.title || '';
+  fSubtitle.value = p.subtitle || '';
+  fDesc.value = p.description || '';
+  fTags.value = (p.tags||[]).join(', ');
+  fLive.value = p.live_link || '';
+  fGithub.value = p.github_link || '';
+  formTitle.textContent = 'Edit Project';
+  cancelEditBtn.style.display = 'inline-block';
+  currentImgHint.textContent = p.image_url ? 'Leave image blank to keep the current picture.' : '';
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+async function deleteProject(id){
+  if(!confirm('Delete this project? This cannot be undone.')) return;
+  const { error } = await supabaseClient.from('projects').delete().eq('id', id);
+  if(error){ alert(error.message); return; }
+  loadProjects();
+}
+</script>
+</body>
+</html>

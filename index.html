@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mavia Yaseen — Software Engineer</title>
+<meta name="description" content="Portfolio of Mavia Yaseen, Software Engineer specializing in full-stack web development and ASP.NET.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+  :root{
+    --bg:#0B0F1A;
+    --surface:#131826;
+    --surface-2:#1A2033;
+    --border:#232B40;
+    --text:#E8EAF0;
+    --muted:#8B92A8;
+    --amber:#F2A93B;
+    --teal:#4FD1C5;
+    --font-display:'Space Grotesk', sans-serif;
+    --font-body:'Inter', sans-serif;
+    --font-mono:'JetBrains Mono', monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--font-body);
+    line-height:1.6;
+    overflow-x:hidden;
+  }
+  @media (prefers-reduced-motion: reduce){
+    html{scroll-behavior:auto;}
+    *{animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important;}
+  }
+  a{color:inherit;text-decoration:none;}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 24px;}
+  ::selection{background:var(--amber);color:#0B0F1A;}
+
+  /* background grid texture */
+  body::before{
+    content:"";
+    position:fixed;inset:0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size:64px 64px;
+    opacity:0.15;
+    mask-image:radial-gradient(ellipse 80% 60% at 50% 0%, #000 20%, transparent 70%);
+    pointer-events:none;
+    z-index:0;
+  }
+
+  /* NAV */
+  header{
+    position:fixed;top:0;left:0;right:0;
+    z-index:100;
+    backdrop-filter:blur(12px);
+    background:rgba(11,15,26,0.75);
+    border-bottom:1px solid var(--border);
+  }
+  nav{
+    max-width:1080px;margin:0 auto;padding:16px 24px;
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  .logo{
+    font-family:var(--font-mono);font-weight:700;font-size:15px;color:var(--amber);
+    display:flex;align-items:center;gap:6px;
+  }
+  .logo .cursor{
+    display:inline-block;width:8px;height:16px;background:var(--amber);
+    animation:blink 1s step-end infinite;
+  }
+  @keyframes blink{50%{opacity:0;}}
+  .navlinks{display:flex;gap:28px;font-family:var(--font-mono);font-size:13px;color:var(--muted);}
+  .navlinks a{transition:color .2s;position:relative;}
+  .navlinks a:hover, .navlinks a:focus-visible{color:var(--text);}
+  .navlinks a::before{content:"";color:var(--teal);}
+  .navlinks .num{color:var(--teal);margin-right:4px;}
+
+  /* HERO */
+  .hero{
+    min-height:100vh;
+    display:flex;flex-direction:column;justify-content:center;
+    padding-top:100px;padding-bottom:60px;
+    position:relative;z-index:1;
+  }
+  .terminal{
+    font-family:var(--font-mono);
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:14px 20px;
+    display:inline-flex;align-items:center;gap:10px;
+    font-size:13px;color:var(--teal);
+    margin-bottom:28px;
+  }
+  .terminal .dots{display:flex;gap:6px;margin-right:8px;}
+  .terminal .dot{width:9px;height:9px;border-radius:50%;}
+  .dot.r{background:#F2555A;}
+  .dot.y{background:#F2C230;}
+  .dot.g{background:#4FD18C;}
+  .terminal .typed::after{
+    content:"";display:inline-block;width:7px;height:14px;background:var(--teal);
+    margin-left:2px;vertical-align:middle;animation:blink 1s step-end infinite;
+  }
+  h1.name{
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:clamp(40px, 8vw, 84px);
+    line-height:1.02;
+    letter-spacing:-0.02em;
+    margin-bottom:14px;
+  }
+  h1.name .accent{color:var(--amber);}
+  .role{
+    font-family:var(--font-mono);
+    font-size:clamp(15px,2.4vw,20px);
+    color:var(--teal);
+    margin-bottom:22px;
+  }
+  .role .comment{color:var(--muted);}
+  .bio{
+    max-width:600px;
+    color:var(--muted);
+    font-size:16px;
+    margin-bottom:34px;
+  }
+  .cta-row{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:36px;}
+  .btn{
+    font-family:var(--font-mono);
+    font-size:14px;
+    padding:13px 26px;
+    border-radius:8px;
+    font-weight:500;
+    transition:transform .2s, box-shadow .2s, background .2s;
+    display:inline-flex;align-items:center;gap:8px;
+    cursor:pointer;border:none;
+  }
+  .btn-primary{background:var(--amber);color:#0B0F1A;}
+  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(242,169,59,.25);}
+  .btn-ghost{background:transparent;color:var(--text);border:1px solid var(--border);}
+  .btn-ghost:hover{border-color:var(--teal);color:var(--teal);transform:translateY(-2px);}
+  .social-row{display:flex;gap:16px;}
+  .social-row a{
+    width:40px;height:40px;border:1px solid var(--border);border-radius:8px;
+    display:flex;align-items:center;justify-content:center;color:var(--muted);
+    transition:all .2s;
+  }
+  .social-row a:hover{color:var(--amber);border-color:var(--amber);transform:translateY(-2px);}
+
+  /* SECTION SHELL */
+  section{position:relative;z-index:1;padding:100px 0;}
+  .eyebrow{
+    font-family:var(--font-mono);color:var(--teal);font-size:13px;
+    display:flex;align-items:center;gap:10px;margin-bottom:12px;
+  }
+  .eyebrow::before{content:"//";color:var(--amber);}
+  h2.section-title{
+    font-family:var(--font-display);font-weight:700;
+    font-size:clamp(28px,4vw,42px);margin-bottom:44px;
+  }
+  .reveal{opacity:0;transform:translateY(24px);transition:opacity .7s ease, transform .7s ease;}
+  .reveal.in{opacity:1;transform:translateY(0);}
+
+  /* ABOUT */
+  .about-grid{display:grid;grid-template-columns:1.3fr 1fr;gap:50px;align-items:start;}
+  @media(max-width:800px){.about-grid{grid-template-columns:1fr;}}
+  .about-text{color:var(--muted);font-size:16px;}
+  .about-text p{margin-bottom:16px;}
+  .stat-card{
+    background:var(--surface);border:1px solid var(--border);border-radius:10px;
+    padding:18px 20px;margin-bottom:12px;
+  }
+  .stat-card .k{font-family:var(--font-mono);color:var(--amber);font-size:12px;text-transform:uppercase;letter-spacing:.06em;}
+  .stat-card .v{font-family:var(--font-display);font-size:17px;margin-top:4px;}
+  .soft-skills{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px;}
+  .pill{
+    font-family:var(--font-mono);font-size:12px;color:var(--teal);
+    border:1px solid var(--border);border-radius:20px;padding:6px 14px;
+  }
+
+  /* EXPERIENCE */
+  .timeline{border-left:2px solid var(--border);padding-left:34px;position:relative;}
+  .tl-item{position:relative;padding-bottom:44px;}
+  .tl-item:last-child{padding-bottom:0;}
+  .tl-item::before{
+    content:"";position:absolute;left:-40px;top:4px;width:12px;height:12px;
+    border-radius:50%;background:var(--bg);border:2px solid var(--amber);
+  }
+  .tl-role{font-family:var(--font-display);font-weight:600;font-size:19px;}
+  .tl-meta{font-family:var(--font-mono);color:var(--teal);font-size:13px;margin:4px 0 10px;}
+  .tl-desc{color:var(--muted);font-size:15px;}
+
+  /* EDUCATION */
+  .edu-card{
+    background:var(--surface);border:1px solid var(--border);border-radius:12px;
+    padding:26px 28px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;
+  }
+  .edu-degree{font-family:var(--font-display);font-weight:600;font-size:19px;}
+  .edu-school{color:var(--muted);margin-top:4px;}
+  .edu-years{font-family:var(--font-mono);color:var(--amber);font-size:14px;}
+
+  /* PROJECTS */
+  .filter-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:32px;}
+  .filter-btn{
+    font-family:var(--font-mono);font-size:12px;color:var(--muted);
+    background:var(--surface);border:1px solid var(--border);border-radius:20px;
+    padding:7px 14px;cursor:pointer;transition:all .2s;
+  }
+  .filter-btn:hover{color:var(--text);border-color:var(--teal);}
+  .filter-btn.active{background:var(--amber);color:#0B0F1A;border-color:var(--amber);}
+  .proj-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:22px;}
+  .proj-card{
+    background:var(--surface);border:1px solid var(--border);border-radius:14px;
+    overflow:hidden;transition:transform .25s, border-color .25s;
+    display:flex;flex-direction:column;
+  }
+  .proj-card:hover{transform:translateY(-6px);border-color:var(--teal);}
+  .proj-thumb{
+    height:150px;position:relative;overflow:hidden;
+    background:
+      linear-gradient(135deg, var(--thumb1,#1A2033), var(--thumb2,#0B0F1A));
+    display:flex;align-items:center;justify-content:center;
+  }
+  .proj-thumb img{width:100%;height:100%;object-fit:cover;position:relative;z-index:1;}
+  .proj-thumb::before{
+    content:"";position:absolute;top:0;left:0;right:0;height:28px;
+    background:var(--surface-2);border-bottom:1px solid var(--border);z-index:2;
+  }
+  .proj-thumb::after{
+    content:"● ● ●";position:absolute;top:8px;left:14px;
+    color:var(--border);font-size:10px;letter-spacing:3px;z-index:3;
+  }
+  .proj-icon{
+    font-family:var(--font-display);font-weight:700;font-size:28px;
+    color:var(--amber);opacity:.85;letter-spacing:.02em;
+  }
+  .proj-body{padding:22px 24px 26px;display:flex;flex-direction:column;gap:12px;flex-grow:1;}
+  .proj-top{display:flex;justify-content:space-between;align-items:flex-start;}
+  .proj-title{font-family:var(--font-display);font-weight:600;font-size:18px;}
+  .proj-desc{color:var(--muted);font-size:14px;flex-grow:1;}
+  .proj-tags{display:flex;flex-wrap:wrap;gap:6px;}
+  .proj-link{font-family:var(--font-mono);font-size:12px;color:var(--amber);margin-top:2px;}
+  .proj-links{display:flex;gap:14px;margin-top:4px;}
+  .proj-links a{font-family:var(--font-mono);font-size:12px;color:var(--teal);border-bottom:1px solid transparent;transition:border-color .2s;}
+  .proj-links a:hover{border-color:var(--teal);}
+  .tag{
+    font-family:var(--font-mono);font-size:11px;color:var(--teal);
+    border:1px solid var(--border);border-radius:6px;padding:3px 8px;
+  }
+
+  /* SKILLS */
+  .skill-groups{display:grid;grid-template-columns:1fr 1fr;gap:44px;}
+  @media(max-width:800px){.skill-groups{grid-template-columns:1fr;}}
+  .skill-group h3{
+    font-family:var(--font-mono);color:var(--amber);font-size:13px;
+    text-transform:uppercase;letter-spacing:.08em;margin-bottom:18px;
+  }
+  .skill-row{margin-bottom:16px;}
+  .skill-label{display:flex;justify-content:space-between;font-size:14px;margin-bottom:6px;}
+  .skill-label .lvl{font-family:var(--font-mono);color:var(--muted);font-size:12px;}
+  .skill-bar{height:6px;background:var(--surface-2);border-radius:4px;overflow:hidden;}
+  .skill-fill{
+    height:100%;border-radius:4px;
+    background:linear-gradient(90deg, var(--teal), var(--amber));
+    width:0%;transition:width 1.2s cubic-bezier(.16,1,.3,1);
+  }
+
+  /* CONTACT */
+  .contact-box{
+    background:var(--surface);border:1px solid var(--border);border-radius:16px;
+    padding:60px 40px;text-align:center;
+  }
+  .contact-box h2{font-family:var(--font-display);font-size:clamp(26px,4vw,38px);margin-bottom:14px;}
+  .contact-box p{color:var(--muted);margin-bottom:30px;}
+  .contact-links{display:flex;justify-content:center;gap:16px;flex-wrap:wrap;}
+
+  footer{
+    text-align:center;padding:32px 24px;color:var(--muted);
+    font-family:var(--font-mono);font-size:12px;border-top:1px solid var(--border);
+    position:relative;z-index:1;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <nav>
+    <div class="logo">mavia<span class="cursor"></span></div>
+    <div class="navlinks">
+      <a href="#about"><span class="num">01.</span>About</a>
+      <a href="#experience"><span class="num">02.</span>Experience</a>
+      <a href="#projects"><span class="num">03.</span>Projects</a>
+      <a href="#skills"><span class="num">04.</span>Stack</a>
+      <a href="#contact"><span class="num">05.</span>Contact</a>
+    </div>
+  </nav>
+</header>
+
+<main class="wrap">
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="terminal"><span class="dots"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span></span><span class="typed" id="typedLine"></span></div>
+    <h1 class="name">Mavia <span class="accent">Yaseen</span></h1>
+    <div class="role"><span class="comment">// </span>Software Engineer — Full-Stack Web &amp; .NET Developer</div>
+    <p class="bio">I design and ship full-stack products — from database to interface — using React, ASP.NET (.NET), and modern web tooling. Currently taking on freelance and full-time work, building reliable software that clients and users can depend on.</p>
+    <div class="cta-row">
+      <a href="#projects" class="btn btn-primary">View Projects →</a>
+      <a href="#contact" class="btn btn-ghost">Get in Touch</a>
+    </div>
+    <div class="social-row">
+      <a href="mailto:maviayaseen00@gmail.com" title="Email" aria-label="Email">✉</a>
+      <a href="https://github.com/" title="GitHub" aria-label="GitHub">GH</a>
+      <a href="https://linkedin.com/" title="LinkedIn" aria-label="LinkedIn">in</a>
+      <a href="https://fiverr.com/" title="Fiverr" aria-label="Fiverr">Fv</a>
+    </div>
+  </section>
+
+  <!-- ABOUT -->
+  <section id="about">
+    <div class="reveal">
+      <div class="eyebrow">about</div>
+      <h2 class="section-title">Who I am</h2>
+      <div class="about-grid">
+        <div class="about-text">
+          <p>I'm a software engineer with a strong foundation in full-stack web development, built through freelance client work and real product builds — from secure voting systems to e-commerce platforms and an AI-assisted umpiring tool.</p>
+          <p>I care about turning requirements into working software: clean architecture, dependable code, and a good experience on both ends — for the client and the end user.</p>
+          <div class="soft-skills">
+            <span class="pill">Problem Solving</span>
+            <span class="pill">Time Management</span>
+            <span class="pill">Teamwork</span>
+            <span class="pill">Communication</span>
+          </div>
+        </div>
+        <div>
+          <div class="stat-card"><div class="k">Location</div><div class="v">Lahore, Pakistan</div></div>
+          <div class="stat-card"><div class="k">Focus</div><div class="v">Full-Stack &amp; ASP.NET (.NET)</div></div>
+          <div class="stat-card"><div class="k">Education</div><div class="v">BS Software Engineering, University of the Punjab</div></div>
+          <div class="stat-card"><div class="k">Email</div><div class="v">maviayaseen00@gmail.com</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- EXPERIENCE -->
+  <section id="experience">
+    <div class="reveal">
+      <div class="eyebrow">career</div>
+      <h2 class="section-title">Experience</h2>
+      <div class="timeline">
+        <div class="tl-item">
+          <div class="tl-role">Freelance Web Developer</div>
+          <div class="tl-meta">Fiverr &amp; Local Clients</div>
+          <div class="tl-desc">Developed and customized web applications based on client requirements. Communicated directly with clients to gather requirements and provide solutions, delivering projects on time with a focus on functionality and quality.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROJECTS -->
+  <section id="projects">
+    <div class="reveal">
+      <div class="eyebrow">work</div>
+      <h2 class="section-title">Projects</h2>
+      <div class="filter-row" id="filterRow"></div>
+      <div class="proj-grid" id="projGrid"></div>
+    </div>
+  </section>
+
+  <!-- SKILLS -->
+  <section id="skills">
+    <div class="reveal">
+      <div class="eyebrow">stack</div>
+      <h2 class="section-title">Tech Stack</h2>
+      <div class="skill-groups" id="skillGroups"></div>
+    </div>
+  </section>
+
+  <!-- CONTACT -->
+  <section id="contact">
+    <div class="reveal">
+      <div class="contact-box">
+        <h2>Let's build something.</h2>
+        <p>Open to Software Developer roles and freelance full-stack projects.</p>
+        <div class="contact-links">
+          <a href="mailto:maviayaseen00@gmail.com" class="btn btn-primary">Email Me</a>
+          <a href="tel:03007305663" class="btn btn-ghost">Call: 0300-7305663</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>© 2026 Mavia Yaseen — built with care in Lahore, Pakistan</footer>
+
+<script src="config.js"></script>
+<script>
+  // Typing effect
+  const line = "$ whoami → building full-stack products";
+  const typedEl = document.getElementById('typedLine');
+  let i = 0;
+  function typeChar(){
+    if(i <= line.length){
+      typedEl.textContent = line.slice(0, i);
+      i++;
+      setTimeout(typeChar, 38);
+    }
+  }
+  typeChar();
+
+  // Scroll reveal
+  const revealEls = document.querySelectorAll('.reveal');
+  const io = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+  }, {threshold:0.15});
+  revealEls.forEach(el=>io.observe(el));
+
+  // ---- DATA ----
+  // Fallback projects shown until the Supabase backend is connected (see SETUP.md)
+  const FALLBACK_PROJECTS = [
+    {title:"CrickVision", subtitle:"AI Umpire Assistant", description:"Final year project: AI-based application that assists cricket umpiring decisions with automated analysis to support accurate decision-making.", tags:["Python","AI","Computer Vision"], live_link:null, github_link:null, image_url:null, c:["#1E2A1F","#0B0F1A"]},
+    {title:"Online Voting System", subtitle:"Secure elections platform", description:"Secure web application with authentication, vote casting, and management functionality.", tags:["PHP","MySQL","Security"], live_link:null, github_link:null, image_url:null, c:["#1E1A2A","#0B0F1A"]},
+    {title:"E-Commerce Website", subtitle:"Full online store", description:"Complete online shopping platform with product listings, shopping cart, and order processing.", tags:["React","Node.js","MongoDB"], live_link:null, github_link:null, image_url:null, c:["#1A2430","#0B0F1A"]},
+    {title:"Fast Food Delivery System", subtitle:"Ordering & tracking platform", description:"Food ordering platform with menu management and real-time order tracking features.", tags:["JavaScript","MySQL","HTML/CSS"], live_link:null, github_link:null, image_url:null, c:["#2A1E1A","#0B0F1A"]},
+    {title:"Driving School Website", subtitle:"Bookings & inquiries", description:"Business website for a driving school built on ASP.NET, with course listings, booking, and inquiry management.", tags:["ASP.NET",".NET","C#"], live_link:null, github_link:null, image_url:null, c:["#1A2A28","#0B0F1A"]},
+  ];
+
+  let projects = FALLBACK_PROJECTS;
+  const THUMB_PAIRS = [["#1E2A1F","#0B0F1A"],["#1E1A2A","#0B0F1A"],["#1A2430","#0B0F1A"],["#2A1E1A","#0B0F1A"],["#1A2A28","#0B0F1A"]];
+
+  async function loadPublicProjects(){
+    if(typeof supabaseClient !== 'undefined' && supabaseClient){
+      const { data, error } = await supabaseClient.from('projects').select('*').order('created_at', {ascending:false});
+      if(!error && data && data.length){
+        projects = data.map((p,i)=>({...p, c: THUMB_PAIRS[i % THUMB_PAIRS.length]}));
+      }
+    }
+    initProjectsUI();
+  }
+
+  const filterRow = document.getElementById('filterRow');
+  const projGrid = document.getElementById('projGrid');
+
+  function renderProjects(filter){
+    projGrid.innerHTML = projects
+      .filter(p=> filter==="All" || (p.tags||[]).includes(filter))
+      .map(p=>`
+        <div class="proj-card">
+          <div class="proj-thumb" style="--thumb1:${p.c[0]};--thumb2:${p.c[1]}">
+            ${p.image_url ? `<img src="${p.image_url}" alt="${p.title}">` : `<span class="proj-icon">${p.title.slice(0,2).toUpperCase()}</span>`}
+          </div>
+          <div class="proj-body">
+            <div class="proj-title">${p.title}</div>
+            ${p.subtitle ? `<div class="proj-link">${p.subtitle}</div>` : ''}
+            <div class="proj-desc">${p.description || ''}</div>
+            <div class="proj-tags">${(p.tags||[]).map(t=>`<span class="tag">${t}</span>`).join('')}</div>
+            ${(p.live_link || p.github_link) ? `<div class="proj-links">
+              ${p.live_link ? `<a href="${p.live_link}" target="_blank" rel="noopener">Live ↗</a>` : ''}
+              ${p.github_link ? `<a href="${p.github_link}" target="_blank" rel="noopener">GitHub ↗</a>` : ''}
+            </div>` : ''}
+          </div>
+        </div>
+      `).join('');
+  }
+
+  function initProjectsUI(){
+    const allTags = ["All", ...new Set(projects.flatMap(p=>p.tags||[]))];
+    filterRow.innerHTML = allTags.map((t,idx)=>`<button class="filter-btn ${idx===0?'active':''}" data-tag="${t}">${t}</button>`).join('');
+    renderProjects("All");
+  }
+
+  filterRow.addEventListener('click', (e)=>{
+    if(e.target.classList.contains('filter-btn')){
+      filterRow.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+      e.target.classList.add('active');
+      renderProjects(e.target.dataset.tag);
+    }
+  });
+
+  loadPublicProjects();
+
+  const skillGroups = [
+    {name:"Languages", skills:[
+      {n:"C#", l:"Intermediate", v:75},
+      {n:"C / C++", l:"Intermediate", v:70},
+      {n:"Java", l:"Intermediate", v:65},
+      {n:"Python", l:"Intermediate", v:70},
+      {n:"JavaScript", l:"Advanced", v:80},
+    ]},
+    {name:"Web & Frameworks", skills:[
+      {n:"ASP.NET (.NET)", l:"Advanced", v:80},
+      {n:"React", l:"Intermediate", v:70},
+      {n:"HTML / CSS", l:"Advanced", v:85},
+      {n:"PHP", l:"Intermediate", v:65},
+      {n:"FastAPI", l:"Beginner", v:45},
+    ]},
+    {name:"Databases", skills:[
+      {n:"MySQL", l:"Advanced", v:78},
+      {n:"MongoDB", l:"Intermediate", v:65},
+      {n:"PostgreSQL", l:"Beginner", v:45},
+      {n:"SQL Server", l:"Intermediate", v:60},
+    ]},
+    {name:"Tools & Platforms", skills:[
+      {n:"Git / GitHub", l:"Advanced", v:82},
+      {n:"Docker", l:"Beginner", v:50},
+      {n:"VS Code", l:"Advanced", v:85},
+      {n:"AWS", l:"Beginner", v:40},
+    ]},
+  ];
+
+  const skillGroupsEl = document.getElementById('skillGroups');
+  skillGroupsEl.innerHTML = skillGroups.map(g=>`
+    <div class="skill-group">
+      <h3>${g.name}</h3>
+      ${g.skills.map(s=>`
+        <div class="skill-row">
+          <div class="skill-label"><span>${s.n}</span><span class="lvl">${s.l}</span></div>
+          <div class="skill-bar"><div class="skill-fill" data-v="${s.v}"></div></div>
+        </div>
+      `).join('')}
+    </div>
+  `).join('');
+
+  const fills = document.querySelectorAll('.skill-fill');
+  const skillIo = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{
+      if(e.isIntersecting){
+        e.target.style.width = e.target.dataset.v + '%';
+        skillIo.unobserve(e.target);
+      }
+    });
+  }, {threshold:0.3});
+  fills.forEach(f=>skillIo.observe(f));
+</script>
+
+</body>
+</html>
