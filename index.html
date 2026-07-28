@@ -440,6 +440,11 @@
   .tl-badge.certificate{background:rgba(242,169,59,.12);color:var(--amber);border:1px solid rgba(242,169,59,.3);}
   .tl-credential{font-family:var(--font-mono);font-size:12px;color:var(--amber);margin-top:8px;display:inline-block;}
   .tl-credential:hover{text-decoration:underline;}
+  .tl-cert-img{
+    display:block;max-width:280px;width:100%;border-radius:8px;border:1px solid var(--border);
+    margin-top:12px;transition:transform .2s, border-color .2s;
+  }
+  .tl-cert-img:hover{transform:scale(1.02);border-color:var(--amber);}
 
   /* EDUCATION */
   .edu-card{
@@ -487,12 +492,13 @@
   }
   .proj-card:hover{border-color:var(--teal);}
   .proj-thumb{
-    height:150px;position:relative;overflow:hidden;
+    height:150px;position:relative;overflow:hidden;cursor:pointer;
     background:
       linear-gradient(135deg, var(--thumb1,#1A2033), var(--thumb2,#0B0F1A));
     display:flex;align-items:center;justify-content:center;
   }
-  .proj-thumb img{width:100%;height:100%;object-fit:cover;position:relative;z-index:1;}
+  .proj-thumb img{width:100%;height:100%;object-fit:cover;position:relative;z-index:1;transition:transform .3s;}
+  .proj-card:hover .proj-thumb img{transform:scale(1.05);}
   .proj-thumb::before{
     content:"";position:absolute;top:0;left:0;right:0;height:28px;
     background:var(--surface-2);border-bottom:1px solid var(--border);z-index:2;
@@ -501,10 +507,43 @@
     content:"● ● ●";position:absolute;top:8px;left:14px;
     color:var(--border);font-size:10px;letter-spacing:3px;z-index:3;
   }
+  .proj-multi-badge{
+    position:absolute;bottom:8px;right:8px;z-index:4;
+    background:rgba(11,15,26,0.8);backdrop-filter:blur(4px);
+    color:var(--text);font-family:var(--font-mono);font-size:11px;
+    padding:3px 9px;border-radius:12px;display:flex;align-items:center;gap:4px;
+  }
   .proj-icon{
     font-family:var(--font-display);font-weight:700;font-size:28px;
     color:var(--amber);opacity:.85;letter-spacing:.02em;
   }
+
+  /* IMAGE LIGHTBOX */
+  #lightbox{
+    position:fixed;inset:0;z-index:500;background:rgba(4,6,12,0.92);backdrop-filter:blur(6px);
+    display:none;align-items:center;justify-content:center;flex-direction:column;
+    opacity:0;transition:opacity .2s;
+  }
+  #lightbox.open{display:flex;opacity:1;}
+  .lb-stage{position:relative;max-width:min(900px,90vw);max-height:76vh;display:flex;align-items:center;justify-content:center;}
+  .lb-stage img{max-width:100%;max-height:76vh;border-radius:10px;box-shadow:0 30px 80px -20px rgba(0,0,0,.8);}
+  .lb-close{
+    position:absolute;top:22px;right:26px;background:none;border:none;color:var(--text);
+    font-size:26px;cursor:pointer;z-index:2;
+  }
+  .lb-nav{
+    position:absolute;top:50%;transform:translateY(-50%);
+    width:44px;height:44px;border-radius:50%;border:1px solid var(--border);
+    background:rgba(19,24,38,0.7);color:var(--text);font-size:18px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;transition:background .2s;
+  }
+  .lb-nav:hover{background:var(--surface-2);}
+  .lb-prev{left:-60px;} .lb-next{right:-60px;}
+  @media(max-width:760px){ .lb-prev{left:8px;} .lb-next{right:8px;} }
+  .lb-caption{font-family:var(--font-mono);font-size:13px;color:var(--muted);margin-top:16px;}
+  .lb-dots{display:flex;gap:6px;margin-top:14px;}
+  .lb-dot{width:7px;height:7px;border-radius:50%;background:var(--border);cursor:pointer;transition:background .2s;}
+  .lb-dot.active{background:var(--amber);}
   .proj-body{padding:22px 24px 26px;display:flex;flex-direction:column;gap:12px;flex-grow:1;}
   .proj-top{display:flex;justify-content:space-between;align-items:flex-start;}
   .proj-title{font-family:var(--font-display);font-weight:600;font-size:18px;}
@@ -708,7 +747,7 @@
   <section id="experience">
     <div class="reveal">
       <div class="eyebrow">career</div>
-      <h2 class="section-title">Experience</h2>
+      <h2 class="section-title">Experience &amp; Certifications</h2>
       <div class="timeline" id="experienceTimeline"></div>
     </div>
   </section>
@@ -794,6 +833,17 @@
     </div>
   </div>
 </footer>
+
+<div id="lightbox">
+  <div class="lb-stage">
+    <button class="lb-nav lb-prev" id="lbPrev" aria-label="Previous image">‹</button>
+    <img id="lbImg" src="" alt="">
+    <button class="lb-nav lb-next" id="lbNext" aria-label="Next image">›</button>
+  </div>
+  <button class="lb-close" id="lbClose" aria-label="Close">✕</button>
+  <div class="lb-caption" id="lbCaption"></div>
+  <div class="lb-dots" id="lbDots"></div>
+</div>
 
 <button id="chatWidget" title="Ask Mavia's AI Assistant" aria-label="Open AI assistant">💬</button>
 
@@ -1030,13 +1080,22 @@
   const filterRow = document.getElementById('filterRow');
   const projGrid = document.getElementById('projGrid');
 
+  function getProjImages(p){
+    if(p.images && Array.isArray(p.images) && p.images.length) return p.images;
+    if(p.image_url) return [p.image_url];
+    return [];
+  }
+
   function renderProjects(filter){
-    projGrid.innerHTML = projects
-      .filter(p=> filter==="All" || (p.tags||[]).includes(filter))
-      .map(p=>`
+    const filtered = projects.filter(p=> filter==="All" || (p.tags||[]).includes(filter));
+    projGrid.innerHTML = filtered
+      .map((p,i)=>{
+        const imgs = getProjImages(p);
+        return `
         <div class="proj-card">
-          <div class="proj-thumb" style="--thumb1:${p.c[0]};--thumb2:${p.c[1]}">
-            ${p.image_url ? `<img src="${p.image_url}" alt="${p.title}">` : `<span class="proj-icon">${p.title.slice(0,2).toUpperCase()}</span>`}
+          <div class="proj-thumb" style="--thumb1:${p.c[0]};--thumb2:${p.c[1]}" data-proj-index="${i}">
+            ${imgs.length ? `<img src="${imgs[0]}" alt="${p.title}">` : `<span class="proj-icon">${p.title.slice(0,2).toUpperCase()}</span>`}
+            ${imgs.length > 1 ? `<div class="proj-multi-badge">🖼 ${imgs.length}</div>` : ''}
           </div>
           <div class="proj-body">
             <div class="proj-title">${p.title}</div>
@@ -1049,8 +1108,16 @@
             </div>` : ''}
           </div>
         </div>
-      `).join('');
+      `;}).join('');
     attachTilt();
+
+    document.querySelectorAll('.proj-thumb').forEach(thumb=>{
+      thumb.addEventListener('click', ()=>{
+        const p = filtered[parseInt(thumb.dataset.projIndex, 10)];
+        const imgs = getProjImages(p);
+        if(imgs.length) openLightbox(imgs, p.title);
+      });
+    });
   }
 
   function attachTilt(){
@@ -1065,6 +1132,38 @@
       card.addEventListener('mouseenter', ()=>{ cursorRing && cursorRing.classList.add('active'); });
     });
   }
+
+  // ---- Lightbox gallery ----
+  let lbImages = [], lbIndex = 0, lbTitle = '';
+  const lightbox = document.getElementById('lightbox');
+  const lbImg = document.getElementById('lbImg');
+  const lbCaption = document.getElementById('lbCaption');
+  const lbDots = document.getElementById('lbDots');
+
+  function openLightbox(images, title){
+    lbImages = images; lbIndex = 0; lbTitle = title;
+    lightbox.classList.add('open');
+    renderLightbox();
+  }
+  function renderLightbox(){
+    lbImg.src = lbImages[lbIndex];
+    lbCaption.textContent = `${lbTitle} — ${lbIndex+1} / ${lbImages.length}`;
+    lbDots.innerHTML = lbImages.length > 1 ? lbImages.map((_,i)=>`<span class="lb-dot ${i===lbIndex?'active':''}" data-i="${i}"></span>`).join('') : '';
+    document.querySelectorAll('.lb-nav').forEach(n=>n.style.display = lbImages.length > 1 ? 'flex' : 'none');
+  }
+  document.getElementById('lbPrev').addEventListener('click', ()=>{ lbIndex = (lbIndex - 1 + lbImages.length) % lbImages.length; renderLightbox(); });
+  document.getElementById('lbNext').addEventListener('click', ()=>{ lbIndex = (lbIndex + 1) % lbImages.length; renderLightbox(); });
+  document.getElementById('lbClose').addEventListener('click', ()=> lightbox.classList.remove('open'));
+  lightbox.addEventListener('click', (e)=>{ if(e.target === lightbox) lightbox.classList.remove('open'); });
+  lbDots.addEventListener('click', (e)=>{
+    if(e.target.classList.contains('lb-dot')){ lbIndex = parseInt(e.target.dataset.i, 10); renderLightbox(); }
+  });
+  document.addEventListener('keydown', (e)=>{
+    if(!lightbox.classList.contains('open')) return;
+    if(e.key === 'Escape') lightbox.classList.remove('open');
+    if(e.key === 'ArrowLeft') document.getElementById('lbPrev').click();
+    if(e.key === 'ArrowRight') document.getElementById('lbNext').click();
+  });
 
   function initProjectsUI(){
     const allTags = ["All", ...new Set(projects.flatMap(p=>p.tags||[]))];
@@ -1192,6 +1291,7 @@
         <div class="tl-role">${x.role} <span class="tl-badge ${type}">${type === 'certificate' ? 'Certificate' : 'Experience'}</span></div>
         ${x.company ? `<div class="tl-meta">${x.company}</div>` : ''}
         ${x.description ? `<div class="tl-desc">${x.description}</div>` : ''}
+        ${x.image_url ? `<a href="${x.image_url}" target="_blank" rel="noopener"><img src="${x.image_url}" alt="${x.role} certificate" class="tl-cert-img"></a>` : ''}
         ${x.credential_url ? `<a href="${x.credential_url}" target="_blank" rel="noopener" class="tl-credential">View Credential ↗</a>` : ''}
       </div>
     `;}).join('');
