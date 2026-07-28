@@ -91,6 +91,7 @@
       <button class="tab-btn active" data-tab="profile">Profile</button>
       <button class="tab-btn" data-tab="projects">Projects</button>
       <button class="tab-btn" data-tab="experience">Experience</button>
+      <button class="tab-btn" data-tab="certifications">Certifications</button>
       <button class="tab-btn" data-tab="skills">Skills / Tech Stack</button>
     </div>
 
@@ -180,12 +181,19 @@
       <div class="card">
         <h1 style="font-size:19px" id="expFormTitle">Add Experience</h1>
         <input type="hidden" id="expEditId">
+        <label class="required">Type</label>
+        <select id="expType">
+          <option value="job">Experience (job / internship / freelance)</option>
+          <option value="certificate">Certificate / Course</option>
+        </select>
         <label class="required">Role / Title</label>
-        <input id="expRole" placeholder="e.g. Freelance Web Developer">
-        <label>Company / Client</label>
-        <input id="expCompany" placeholder="e.g. Fiverr & Local Clients">
+        <input id="expRole" placeholder="e.g. Freelance Web Developer, or Frontend Developer (React)">
+        <label>Company / Issuer</label>
+        <input id="expCompany" placeholder="e.g. Fiverr & Local Clients, or HackerRank">
         <label>Description</label>
         <textarea id="expDesc" placeholder="What you did, tools used, outcomes..."></textarea>
+        <label>Credential URL <span style="color:var(--muted);font-weight:400">(only for certificates — leave blank for jobs)</span></label>
+        <input id="expCredential" placeholder="https://...">
         <button class="btn btn-primary" id="expSaveBtn">Save Experience</button>
         <button class="btn btn-ghost" id="expCancelBtn" style="display:none">Cancel edit</button>
         <div class="msg" id="expFormMsg"></div>
@@ -194,6 +202,32 @@
       <div class="card">
         <h1 style="font-size:19px;margin-bottom:16px">Your Experience</h1>
         <div id="expList"></div>
+      </div>
+    </div>
+
+    <!-- CERTIFICATIONS TAB -->
+    <div class="tab-panel" id="tab-certifications">
+      <div class="card">
+        <h1 style="font-size:19px" id="certFormTitle">Add Certification</h1>
+        <input type="hidden" id="certEditId">
+        <label class="required">Course / Certification Title</label>
+        <input id="certTitle" placeholder="e.g. AI For Everyone">
+        <label>Issuer</label>
+        <input id="certIssuer" placeholder="e.g. DeepLearning.AI">
+        <label>Date <span style="color:var(--muted);font-weight:400">(any format, e.g. "Aug 2025")</span></label>
+        <input id="certDate" placeholder="Aug 2025">
+        <label>Credential URL <span style="color:var(--muted);font-weight:400">(leave blank if none)</span></label>
+        <input id="certUrl" placeholder="https://...">
+        <label>Tags (comma separated)</label>
+        <input id="certTags" placeholder="Machine Learning, AI">
+        <button class="btn btn-primary" id="certSaveBtn">Save Certification</button>
+        <button class="btn btn-ghost" id="certCancelBtn" style="display:none">Cancel edit</button>
+        <div class="msg" id="certFormMsg"></div>
+      </div>
+
+      <div class="card">
+        <h1 style="font-size:19px;margin-bottom:16px">Your Certifications</h1>
+        <div id="certList"></div>
       </div>
     </div>
 
@@ -254,6 +288,7 @@ async function checkSession(){
     logoutBtn.style.display = 'inline-block';
     loadProjects();
     loadExperience();
+    loadCertifications();
     loadSkills();
     loadProfile();
   } else {
@@ -404,13 +439,13 @@ async function deleteProject(id){
 }
 
 // ---- Experience CRUD ----
-const expRole=document.getElementById('expRole'), expCompany=document.getElementById('expCompany'),
-      expDesc=document.getElementById('expDesc'), expEditId=document.getElementById('expEditId'),
+const expType=document.getElementById('expType'), expRole=document.getElementById('expRole'), expCompany=document.getElementById('expCompany'),
+      expDesc=document.getElementById('expDesc'), expCredential=document.getElementById('expCredential'), expEditId=document.getElementById('expEditId'),
       expFormMsg=document.getElementById('expFormMsg'), expFormTitle=document.getElementById('expFormTitle'),
       expCancelBtn=document.getElementById('expCancelBtn');
 
 function resetExpForm(){
-  expEditId.value=''; expRole.value=''; expCompany.value=''; expDesc.value='';
+  expEditId.value=''; expType.value='job'; expRole.value=''; expCompany.value=''; expDesc.value=''; expCredential.value='';
   expFormTitle.textContent='Add Experience'; expCancelBtn.style.display='none';
 }
 expCancelBtn.addEventListener('click', resetExpForm);
@@ -421,9 +456,11 @@ document.getElementById('expSaveBtn').addEventListener('click', async ()=>{
   }
   expFormMsg.textContent = "Saving..."; expFormMsg.className = 'msg';
   const payload = {
+    type: expType.value,
     role: expRole.value.trim(),
     company: expCompany.value.trim() || null,
     description: expDesc.value.trim() || null,
+    credential_url: expCredential.value.trim() || null,
   };
   const existingId = expEditId.value;
   let result;
@@ -448,7 +485,7 @@ async function loadExperience(){
   list.innerHTML = data.map(x=>`
     <div class="proj-row">
       <div class="info">
-        <div class="title">${x.role}</div>
+        <div class="title">${x.role} <span style="color:var(--muted);font-weight:400">${x.type === 'certificate' ? '· Certificate' : '· Experience'}</span></div>
         <div class="tags">${x.company || ''}</div>
       </div>
       <div class="actions">
@@ -460,7 +497,9 @@ async function loadExperience(){
 }
 
 function editExperience(x){
-  expEditId.value = x.id; expRole.value = x.role || ''; expCompany.value = x.company || ''; expDesc.value = x.description || '';
+  expEditId.value = x.id; expType.value = x.type === 'certificate' ? 'certificate' : 'job';
+  expRole.value = x.role || ''; expCompany.value = x.company || ''; expDesc.value = x.description || '';
+  expCredential.value = x.credential_url || '';
   expFormTitle.textContent = 'Edit Experience'; expCancelBtn.style.display = 'inline-block';
   window.scrollTo({top:0, behavior:'smooth'});
 }
@@ -470,6 +509,79 @@ async function deleteExperience(id){
   const { error } = await supabaseClient.from('experience').delete().eq('id', id);
   if(error){ alert(error.message); return; }
   loadExperience();
+}
+
+// ---- Certifications CRUD ----
+const certTitle=document.getElementById('certTitle'), certIssuer=document.getElementById('certIssuer'),
+      certDate=document.getElementById('certDate'), certUrl=document.getElementById('certUrl'),
+      certTags=document.getElementById('certTags'), certEditId=document.getElementById('certEditId'),
+      certFormMsg=document.getElementById('certFormMsg'), certFormTitle=document.getElementById('certFormTitle'),
+      certCancelBtn=document.getElementById('certCancelBtn');
+
+function resetCertForm(){
+  certEditId.value=''; certTitle.value=''; certIssuer.value=''; certDate.value=''; certUrl.value=''; certTags.value='';
+  certFormTitle.textContent='Add Certification'; certCancelBtn.style.display='none';
+}
+certCancelBtn.addEventListener('click', resetCertForm);
+
+document.getElementById('certSaveBtn').addEventListener('click', async ()=>{
+  if(!certTitle.value.trim()){
+    certFormMsg.textContent = "Title is required."; certFormMsg.className = 'msg err'; return;
+  }
+  certFormMsg.textContent = "Saving..."; certFormMsg.className = 'msg';
+  const payload = {
+    title: certTitle.value.trim(),
+    issuer: certIssuer.value.trim() || null,
+    date_text: certDate.value.trim() || null,
+    credential_url: certUrl.value.trim() || null,
+    tags: certTags.value.split(',').map(t=>t.trim()).filter(Boolean),
+  };
+  const existingId = certEditId.value;
+  let result;
+  if(existingId){
+    result = await supabaseClient.from('certifications').update(payload).eq('id', existingId);
+  } else {
+    result = await supabaseClient.from('certifications').insert(payload);
+  }
+  if(result.error){
+    certFormMsg.textContent = "Error: " + result.error.message; certFormMsg.className = 'msg err';
+  } else {
+    certFormMsg.textContent = "Saved."; certFormMsg.className = 'msg ok';
+    resetCertForm(); loadCertifications();
+  }
+});
+
+async function loadCertifications(){
+  const list = document.getElementById('certList');
+  const { data, error } = await supabaseClient.from('certifications').select('*').order('sort_order', {ascending:true});
+  if(error){ list.innerHTML = `<div class="msg err">${error.message}</div>`; return; }
+  if(!data.length){ list.innerHTML = `<div class="hint">No certifications yet — add your first one above.</div>`; return; }
+  list.innerHTML = data.map(x=>`
+    <div class="proj-row">
+      <div class="info">
+        <div class="title">${x.title}</div>
+        <div class="tags">${x.issuer || ''}${x.date_text ? ' · ' + x.date_text : ''}</div>
+      </div>
+      <div class="actions">
+        <button class="btn btn-ghost" onclick='editCertification(${JSON.stringify(x).replace(/'/g,"&apos;")})'>Edit</button>
+        <button class="btn btn-danger" onclick="deleteCertification('${x.id}')">Delete</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function editCertification(x){
+  certEditId.value = x.id; certTitle.value = x.title || ''; certIssuer.value = x.issuer || '';
+  certDate.value = x.date_text || ''; certUrl.value = x.credential_url || ''; certTags.value = (x.tags||[]).join(', ');
+  certFormTitle.textContent = 'Edit Certification'; certCancelBtn.style.display = 'inline-block';
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+async function deleteCertification(id){
+  if(!confirm('Delete this certification?')) return;
+  const { error } = await supabaseClient.from('certifications').delete().eq('id', id);
+  if(error){ alert(error.message); return; }
+  loadCertifications();
 }
 
 // ---- Skills CRUD ----
