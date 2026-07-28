@@ -49,6 +49,12 @@
   .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;}
   #logoutBtn{display:none;}
   .required::after{content:" *";color:var(--danger);}
+  .img-chip{position:relative;width:64px;height:64px;border-radius:8px;overflow:hidden;border:1px solid var(--border);}
+  .img-chip img{width:100%;height:100%;object-fit:cover;}
+  .img-chip button{
+    position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;
+    background:rgba(0,0,0,0.7);color:#fff;border:none;font-size:11px;cursor:pointer;line-height:1;
+  }
   .tabs{display:flex;gap:8px;margin-bottom:24px;border-bottom:1px solid var(--border);}
   .tab-btn{
     font-family:var(--font-mono);font-size:13px;color:var(--muted);background:none;border:none;
@@ -162,9 +168,10 @@
         <input id="fLive" placeholder="https://...">
         <label>GitHub link <span style="color:var(--muted);font-weight:400">(leave blank if none)</span></label>
         <input id="fGithub" placeholder="https://github.com/...">
-        <label>Project image</label>
-        <input type="file" id="fImage" accept="image/*">
+        <label>Project Images <span style="color:var(--muted);font-weight:400">(select multiple — first one is the main thumbnail)</span></label>
+        <input type="file" id="fImage" accept="image/*" multiple>
         <div class="hint" id="currentImgHint"></div>
+        <div id="existingImages" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px"></div>
         <button class="btn btn-primary" id="saveBtn">Save Project</button>
         <button class="btn btn-ghost" id="cancelEditBtn" style="display:none">Cancel edit</button>
         <div class="msg" id="formMsg"></div>
@@ -194,6 +201,9 @@
         <textarea id="expDesc" placeholder="What you did, tools used, outcomes..."></textarea>
         <label>Credential URL <span style="color:var(--muted);font-weight:400">(only for certificates — leave blank for jobs)</span></label>
         <input id="expCredential" placeholder="https://...">
+        <label>Certificate Image <span style="color:var(--muted);font-weight:400">(optional — upload a screenshot/photo of the certificate)</span></label>
+        <input type="file" id="expImage" accept="image/*">
+        <div class="hint" id="expImgHint"></div>
         <button class="btn btn-primary" id="expSaveBtn">Save Experience</button>
         <button class="btn btn-ghost" id="expCancelBtn" style="display:none">Cancel edit</button>
         <div class="msg" id="expFormMsg"></div>
@@ -335,12 +345,29 @@ const fTitle=document.getElementById('fTitle'), fSubtitle=document.getElementByI
       fLive=document.getElementById('fLive'), fGithub=document.getElementById('fGithub'),
       fImage=document.getElementById('fImage'), editId=document.getElementById('editId'),
       formMsg=document.getElementById('formMsg'), formTitle=document.getElementById('formTitle'),
-      cancelEditBtn=document.getElementById('cancelEditBtn'), currentImgHint=document.getElementById('currentImgHint');
+      cancelEditBtn=document.getElementById('cancelEditBtn'), currentImgHint=document.getElementById('currentImgHint'),
+      existingImagesEl=document.getElementById('existingImages');
+
+let keptImages = []; // images kept when editing (existing minus removed)
+
+function renderExistingImages(){
+  existingImagesEl.innerHTML = keptImages.map((url, i)=>`
+    <div class="img-chip">
+      <img src="${url}">
+      <button type="button" onclick="removeExistingImage(${i})" aria-label="Remove image">✕</button>
+    </div>
+  `).join('');
+}
+function removeExistingImage(i){
+  keptImages.splice(i, 1);
+  renderExistingImages();
+}
 
 function resetForm(){
   editId.value=''; fTitle.value=''; fSubtitle.value=''; fDesc.value=''; fTags.value='';
   fLive.value=''; fGithub.value=''; fImage.value=''; formTitle.textContent='Add Project';
   cancelEditBtn.style.display='none'; currentImgHint.textContent='';
+  keptImages = []; renderExistingImages();
 }
 
 cancelEditBtn.addEventListener('click', resetForm);
@@ -354,20 +381,23 @@ document.getElementById('saveBtn').addEventListener('click', async ()=>{
   formMsg.textContent = "Saving...";
   formMsg.className = 'msg';
 
-  let image_url = null;
   const existingId = editId.value;
+  let newUrls = [];
 
-  if(fImage.files[0]){
-    const file = fImage.files[0];
-    const path = `${Date.now()}_${file.name}`;
-    const { error: upErr } = await supabaseClient.storage.from('project-images').upload(path, file);
-    if(upErr){
-      formMsg.textContent = "Image upload failed: " + upErr.message;
-      formMsg.className = 'msg err';
-      return;
+  if(fImage.files.length){
+    for(const file of fImage.files){
+      const path = `${Date.now()}_${Math.random().toString(36).slice(2,7)}_${file.name}`;
+      const { error: upErr } = await supabaseClient.storage.from('project-images').upload(path, file);
+      if(upErr){
+        formMsg.textContent = "Image upload failed: " + upErr.message;
+        formMsg.className = 'msg err';
+        return;
+      }
+      newUrls.push(supabaseClient.storage.from('project-images').getPublicUrl(path).data.publicUrl);
     }
-    image_url = supabaseClient.storage.from('project-images').getPublicUrl(path).data.publicUrl;
   }
+
+  const finalImages = [...keptImages, ...newUrls];
 
   const payload = {
     title: fTitle.value.trim(),
@@ -377,7 +407,10 @@ document.getElementById('saveBtn').addEventListener('click', async ()=>{
     live_link: fLive.value.trim() || null,
     github_link: fGithub.value.trim() || null,
   };
-  if(image_url) payload.image_url = image_url;
+  if(finalImages.length){
+    payload.images = finalImages;
+    payload.image_url = finalImages[0];
+  }
 
   let result;
   if(existingId){
@@ -402,11 +435,14 @@ async function loadProjects(){
   const { data, error } = await supabaseClient.from('projects').select('*').order('created_at', {ascending:false});
   if(error){ list.innerHTML = `<div class="msg err">${error.message}</div>`; return; }
   if(!data.length){ list.innerHTML = `<div class="hint">No projects yet — add your first one above.</div>`; return; }
-  list.innerHTML = data.map(p=>`
+  list.innerHTML = data.map(p=>{
+    const thumb = (p.images && p.images[0]) || p.image_url || '';
+    const count = (p.images && p.images.length) || (p.image_url ? 1 : 0);
+    return `
     <div class="proj-row">
-      <img src="${p.image_url || ''}" onerror="this.style.visibility='hidden'">
+      <img src="${thumb}" onerror="this.style.visibility='hidden'">
       <div class="info">
-        <div class="title">${p.title}</div>
+        <div class="title">${p.title} ${count > 1 ? `<span style="color:var(--muted);font-weight:400">(${count} images)</span>` : ''}</div>
         <div class="tags">${(p.tags||[]).join(' · ')}${p.live_link ? ' · live link' : ''}${p.github_link ? ' · github' : ''}</div>
       </div>
       <div class="actions">
@@ -414,7 +450,7 @@ async function loadProjects(){
         <button class="btn btn-danger" onclick="deleteProject('${p.id}')">Delete</button>
       </div>
     </div>
-  `).join('');
+  `;}).join('');
 }
 
 function editProject(p){
@@ -427,7 +463,9 @@ function editProject(p){
   fGithub.value = p.github_link || '';
   formTitle.textContent = 'Edit Project';
   cancelEditBtn.style.display = 'inline-block';
-  currentImgHint.textContent = p.image_url ? 'Leave image blank to keep the current picture.' : '';
+  keptImages = (p.images && p.images.length) ? [...p.images] : (p.image_url ? [p.image_url] : []);
+  renderExistingImages();
+  currentImgHint.textContent = keptImages.length ? 'New uploads are added to these. Click ✕ to remove one.' : '';
   window.scrollTo({top:0, behavior:'smooth'});
 }
 
@@ -441,11 +479,13 @@ async function deleteProject(id){
 // ---- Experience CRUD ----
 const expType=document.getElementById('expType'), expRole=document.getElementById('expRole'), expCompany=document.getElementById('expCompany'),
       expDesc=document.getElementById('expDesc'), expCredential=document.getElementById('expCredential'), expEditId=document.getElementById('expEditId'),
+      expImage=document.getElementById('expImage'), expImgHint=document.getElementById('expImgHint'),
       expFormMsg=document.getElementById('expFormMsg'), expFormTitle=document.getElementById('expFormTitle'),
       expCancelBtn=document.getElementById('expCancelBtn');
 
 function resetExpForm(){
   expEditId.value=''; expType.value='job'; expRole.value=''; expCompany.value=''; expDesc.value=''; expCredential.value='';
+  expImage.value=''; expImgHint.textContent='';
   expFormTitle.textContent='Add Experience'; expCancelBtn.style.display='none';
 }
 expCancelBtn.addEventListener('click', resetExpForm);
@@ -455,6 +495,19 @@ document.getElementById('expSaveBtn').addEventListener('click', async ()=>{
     expFormMsg.textContent = "Role is required."; expFormMsg.className = 'msg err'; return;
   }
   expFormMsg.textContent = "Saving..."; expFormMsg.className = 'msg';
+
+  let image_url = null;
+  if(expImage.files[0]){
+    const file = expImage.files[0];
+    const path = `exp_${Date.now()}_${file.name}`;
+    const { error: upErr } = await supabaseClient.storage.from('project-images').upload(path, file);
+    if(upErr){
+      expFormMsg.textContent = "Image upload failed: " + upErr.message; expFormMsg.className = 'msg err';
+      return;
+    }
+    image_url = supabaseClient.storage.from('project-images').getPublicUrl(path).data.publicUrl;
+  }
+
   const payload = {
     type: expType.value,
     role: expRole.value.trim(),
@@ -462,6 +515,8 @@ document.getElementById('expSaveBtn').addEventListener('click', async ()=>{
     description: expDesc.value.trim() || null,
     credential_url: expCredential.value.trim() || null,
   };
+  if(image_url) payload.image_url = image_url;
+
   const existingId = expEditId.value;
   let result;
   if(existingId){
@@ -500,6 +555,8 @@ function editExperience(x){
   expEditId.value = x.id; expType.value = x.type === 'certificate' ? 'certificate' : 'job';
   expRole.value = x.role || ''; expCompany.value = x.company || ''; expDesc.value = x.description || '';
   expCredential.value = x.credential_url || '';
+  expImage.value = '';
+  expImgHint.textContent = x.image_url ? 'Leave image blank to keep the current picture.' : '';
   expFormTitle.textContent = 'Edit Experience'; expCancelBtn.style.display = 'inline-block';
   window.scrollTo({top:0, behavior:'smooth'});
 }
