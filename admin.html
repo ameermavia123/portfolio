@@ -110,8 +110,11 @@
         <input id="pFirstName" placeholder="Mavia">
         <label class="required">Last Name</label>
         <input id="pLastName" placeholder="Yaseen">
-        <label>Initials (shown on photo placeholder)</label>
+        <label>Initials (shown if no photo is uploaded)</label>
         <input id="pInitials" placeholder="MY">
+        <label>Profile Photo</label>
+        <input type="file" id="pPhoto" accept="image/*">
+        <div class="hint" id="pPhotoHint"></div>
         <label>Handle</label>
         <input id="pHandle" placeholder="@mavia">
         <label>Role / Title line</label>
@@ -138,6 +141,8 @@
         <input id="pGithub" placeholder="https://github.com/yourusername">
         <label>LinkedIn URL</label>
         <input id="pLinkedin" placeholder="https://linkedin.com/in/yourusername">
+        <label>Fiverr URL</label>
+        <input id="pFiverr" placeholder="https://fiverr.com/yourusername">
         <label>Contact heading</label>
         <input id="pContactHeading" placeholder="Have a project in mind?">
         <label>Contact subtext</label>
@@ -146,6 +151,23 @@
         <input id="pAvailability" placeholder="Available for freelance projects...">
         <label>Footer tagline</label>
         <textarea id="pFooterTagline"></textarea>
+        <label>Soft skills <span style="color:var(--muted);font-weight:400">(comma separated, shown as pills in About)</span></label>
+        <input id="pSoftSkills" placeholder="Problem Solving, Time Management, Teamwork, Communication">
+        <label>Stat 1 — number &amp; label <span style="color:var(--muted);font-weight:400">(About section counters)</span></label>
+        <div style="display:flex;gap:10px">
+          <input id="pStat1Num" type="number" placeholder="5" style="max-width:100px">
+          <input id="pStat1Label" placeholder="Projects Built">
+        </div>
+        <label>Stat 2 — number &amp; label</label>
+        <div style="display:flex;gap:10px">
+          <input id="pStat2Num" type="number" placeholder="6" style="max-width:100px">
+          <input id="pStat2Label" placeholder="Core Languages">
+        </div>
+        <label>Stat 3 — number &amp; label</label>
+        <div style="display:flex;gap:10px">
+          <input id="pStat3Num" type="number" placeholder="10" style="max-width:100px">
+          <input id="pStat3Label" placeholder="Tools & Frameworks">
+        </div>
         <button class="btn btn-primary" id="pSaveBtn">Save Site Content</button>
         <div class="msg" id="pFormMsg"></div>
       </div>
@@ -718,11 +740,16 @@ const pFields = {
   role:'pRole', bio:'pBio', about_p1:'pAboutP1', about_p2:'pAboutP2',
   location:'pLocation', focus:'pFocus', education:'pEducation',
   email:'pEmail', phone:'pPhone', whatsapp:'pWhatsapp',
-  github_url:'pGithub', linkedin_url:'pLinkedin',
+  github_url:'pGithub', linkedin_url:'pLinkedin', fiverr_url:'pFiverr',
   contact_heading:'pContactHeading', contact_sub:'pContactSub', availability:'pAvailability',
-  footer_tagline:'pFooterTagline',
+  footer_tagline:'pFooterTagline', soft_skills:'pSoftSkills',
+  stat1_num:'pStat1Num', stat1_label:'pStat1Label',
+  stat2_num:'pStat2Num', stat2_label:'pStat2Label',
+  stat3_num:'pStat3Num', stat3_label:'pStat3Label',
 };
 const pFormMsg = document.getElementById('pFormMsg');
+const pPhoto = document.getElementById('pPhoto');
+const pPhotoHint = document.getElementById('pPhotoHint');
 
 async function loadProfile(){
   const { data, error } = await supabaseClient.from('site_profile').select('*').eq('id', 1).single();
@@ -731,6 +758,7 @@ async function loadProfile(){
     const el = document.getElementById(id);
     if(el && data[key] !== null && data[key] !== undefined) el.value = data[key];
   });
+  pPhotoHint.textContent = data.photo_url ? 'A photo is already set. Upload a new one to replace it.' : '';
 }
 
 document.getElementById('pSaveBtn').addEventListener('click', async ()=>{
@@ -740,11 +768,24 @@ document.getElementById('pSaveBtn').addEventListener('click', async ()=>{
     const el = document.getElementById(id);
     payload[key] = el.value.trim() || null;
   });
+
+  if(pPhoto.files[0]){
+    const file = pPhoto.files[0];
+    const path = `profile_${Date.now()}_${file.name}`;
+    const { error: upErr } = await supabaseClient.storage.from('project-images').upload(path, file);
+    if(upErr){
+      pFormMsg.textContent = "Photo upload failed: " + upErr.message; pFormMsg.className = 'msg err';
+      return;
+    }
+    payload.photo_url = supabaseClient.storage.from('project-images').getPublicUrl(path).data.publicUrl;
+  }
+
   const { error } = await supabaseClient.from('site_profile').update(payload).eq('id', 1);
   if(error){
     pFormMsg.textContent = "Error: " + error.message; pFormMsg.className = 'msg err';
   } else {
     pFormMsg.textContent = "Saved — your live site is updated."; pFormMsg.className = 'msg ok';
+    pPhoto.value = '';
   }
 });
 </script>
