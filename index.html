@@ -15,7 +15,7 @@
     --surface-2:#1A2033;
     --border:#232B40;
     --text:#E8EAF0;
-    --muted:#8B92A8;
+    --muted:#CDD2E3;
     --amber:#F2A93B;
     --teal:#4FD1C5;
     --font-display:'Space Grotesk', sans-serif;
@@ -61,8 +61,30 @@
     z-index:200;transition:width .1s linear;
   }
 
-  /* particle network background */
-  #particleCanvas{position:fixed;inset:0;z-index:0;opacity:.7;pointer-events:none;}
+  /* atomic structure background (pure CSS, GPU-accelerated, no per-frame JS) */
+  .atom{position:fixed;pointer-events:none;z-index:0;opacity:.3;}
+  .atom .nucleus{
+    position:absolute;top:50%;left:50%;width:7px;height:7px;border-radius:50%;
+    background:var(--amber);transform:translate(-50%,-50%);
+    box-shadow:0 0 10px var(--amber);
+  }
+  .atom .orbit{
+    position:absolute;top:50%;left:50%;border:1px solid var(--teal);border-radius:50%;
+    transform:translate(-50%,-50%);
+  }
+  .atom .electron{
+    position:absolute;top:-3px;left:50%;width:6px;height:6px;border-radius:50%;
+    background:var(--teal);transform:translateX(-50%);box-shadow:0 0 8px var(--teal);
+  }
+  .atom .orbit.o1{width:150px;height:150px;animation:spinA 9s linear infinite;}
+  .atom .orbit.o2{width:150px;height:70px;animation:spinB 13s linear infinite reverse;}
+  .atom .orbit.o3{width:70px;height:150px;animation:spinA 11s linear infinite;}
+  .atom.small .orbit.o1{width:90px;height:90px;}
+  .atom.small .orbit.o2{width:90px;height:42px;}
+  .atom.small .orbit.o3{width:42px;height:90px;}
+  @keyframes spinA{ to{ transform:translate(-50%,-50%) rotate(360deg); } }
+  @keyframes spinB{ to{ transform:translate(-50%,-50%) rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce){ .atom .orbit{animation:none;} }
 
   /* background grid texture */
   body::before{
@@ -77,67 +99,6 @@
     pointer-events:none;
     z-index:0;
   }
-
-  /* animated grid scan sweep */
-  body::after{
-    content:"";
-    position:fixed;inset:0;
-    background:linear-gradient(100deg, transparent 40%, rgba(79,209,197,0.05) 50%, transparent 60%);
-    background-size:300% 300%;
-    animation:scanSweep 9s ease-in-out infinite;
-    pointer-events:none;
-    z-index:0;
-  }
-  @keyframes scanSweep{
-    0%{background-position:0% 0%;}
-    50%{background-position:100% 100%;}
-    100%{background-position:0% 0%;}
-  }
-
-  /* floating gradient orbs */
-  .orb{
-    position:fixed;border-radius:50%;filter:blur(90px);pointer-events:none;z-index:0;
-    opacity:.35;mix-blend-mode:screen;
-  }
-  .orb-1{
-    width:420px;height:420px;background:radial-gradient(circle, var(--teal), transparent 70%);
-    top:-100px;left:-100px;
-    animation:orbFloat1 22s ease-in-out infinite;
-  }
-  .orb-2{
-    width:480px;height:480px;background:radial-gradient(circle, var(--amber), transparent 70%);
-    top:40%;right:-150px;
-    animation:orbFloat2 26s ease-in-out infinite;
-  }
-  .orb-3{
-    width:360px;height:360px;background:radial-gradient(circle, #6C5CE7, transparent 70%);
-    bottom:-120px;left:20%;
-    animation:orbFloat3 30s ease-in-out infinite;
-  }
-  @keyframes orbFloat1{
-    0%,100%{transform:translate(0,0) scale(1);}
-    33%{transform:translate(120px,180px) scale(1.15);}
-    66%{transform:translate(60px,-60px) scale(.9);}
-  }
-  @keyframes orbFloat2{
-    0%,100%{transform:translate(0,0) scale(1);}
-    33%{transform:translate(-140px,100px) scale(.9);}
-    66%{transform:translate(-60px,-140px) scale(1.2);}
-  }
-  @keyframes orbFloat3{
-    0%,100%{transform:translate(0,0) scale(1);}
-    50%{transform:translate(100px,-120px) scale(1.1);}
-  }
-  @media (prefers-reduced-motion: reduce){
-    .orb, body::after{animation:none;}
-  }
-
-  /* drifting code symbols pattern */
-  .symbol{
-    position:fixed;font-family:var(--font-mono);font-weight:700;color:var(--border);
-    z-index:0;pointer-events:none;user-select:none;opacity:.5;
-  }
-  @media (prefers-reduced-motion: reduce){ .symbol{animation:none !important;} }
 
   /* NAV */
   header{
@@ -168,9 +129,9 @@
     animation:blink 1s step-end infinite;
   }
   @keyframes blink{50%{opacity:0;}}
-  .navlinks{display:flex;gap:28px;font-family:var(--font-mono);font-size:13px;color:var(--muted);}
+  .navlinks{display:flex;gap:28px;font-family:var(--font-mono);font-size:13px;color:var(--text);}
   .navlinks a{transition:color .2s;position:relative;}
-  .navlinks a:hover, .navlinks a:focus-visible{color:var(--text);}
+  .navlinks a:hover, .navlinks a:focus-visible{color:var(--teal);}
   .navlinks a::before{content:"";color:var(--teal);}
   .navlinks .num{color:var(--teal);margin-right:4px;}
   .nav-cta{
@@ -221,6 +182,7 @@
       radial-gradient(circle at 30% 20%, rgba(79,209,197,.18), transparent 55%),
       radial-gradient(circle at 80% 90%, rgba(242,169,59,.18), transparent 55%);
   }
+  .photo-avatar img{width:100%;height:100%;object-fit:cover;}
   .photo-badge{
     position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);
     display:flex;align-items:center;gap:10px;
@@ -382,7 +344,7 @@
   .social-row{display:flex;gap:16px;}
   .social-row a{
     width:40px;height:40px;border:1px solid var(--border);border-radius:8px;
-    display:flex;align-items:center;justify-content:center;color:var(--muted);
+    display:flex;align-items:center;justify-content:center;color:var(--text);
     transition:all .2s;
   }
   .social-row a:hover{color:var(--amber);border-color:var(--amber);transform:translateY(-2px);}
@@ -419,7 +381,7 @@
   }
   .counter-row{display:flex;gap:28px;margin-top:28px;flex-wrap:wrap;}
   .counter-num{font-family:var(--font-display);font-weight:700;font-size:32px;color:var(--amber);}
-  .counter-label{font-family:var(--font-mono);font-size:11px;color:var(--muted);margin-top:2px;}
+  .counter-label{font-family:var(--font-mono);font-size:11px;color:var(--text);margin-top:2px;}
 
   /* EXPERIENCE */
   .timeline{border-left:2px solid var(--border);padding-left:34px;position:relative;}
@@ -478,11 +440,11 @@
   /* PROJECTS */
   .filter-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:32px;}
   .filter-btn{
-    font-family:var(--font-mono);font-size:12px;color:var(--muted);
+    font-family:var(--font-mono);font-size:12px;color:var(--text);
     background:var(--surface);border:1px solid var(--border);border-radius:20px;
     padding:7px 14px;cursor:pointer;transition:all .2s;
   }
-  .filter-btn:hover{color:var(--text);border-color:var(--teal);}
+  .filter-btn:hover{color:var(--teal);border-color:var(--teal);}
   .filter-btn.active{background:var(--amber);color:#0B0F1A;border-color:var(--amber);}
   .proj-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:22px;perspective:1000px;}
   .proj-card{
@@ -616,7 +578,7 @@
   .footer-social{display:flex;gap:10px;margin-top:18px;}
   .footer-social a{
     width:36px;height:36px;border:1px solid var(--border);border-radius:8px;
-    display:flex;align-items:center;justify-content:center;color:var(--muted);
+    display:flex;align-items:center;justify-content:center;color:var(--text);
     font-family:var(--font-mono);font-size:12px;transition:all .2s;
   }
   .footer-social a:hover{color:var(--amber);border-color:var(--amber);transform:translateY(-2px);}
@@ -625,9 +587,9 @@
     text-transform:uppercase;letter-spacing:.08em;margin-bottom:16px;
   }
   .footer-col a, .footer-col .footer-line{
-    display:block;color:var(--muted);font-size:14px;margin-bottom:10px;transition:color .2s;
+    display:block;color:var(--text);font-size:14px;margin-bottom:10px;transition:color .2s;
   }
-  .footer-col a:hover{color:var(--text);}
+  .footer-col a:hover{color:var(--amber);}
   .footer-bottom{
     border-top:1px solid var(--border);
     padding:22px 0;
@@ -649,21 +611,41 @@
 <div id="cursorDot"></div>
 <div id="cursorRing"></div>
 <div id="progressBar"></div>
-<div class="orb orb-1"></div>
-<div class="orb orb-2"></div>
-<div class="orb orb-3"></div>
-<canvas id="particleCanvas"></canvas>
+<div class="atom" style="top:8vh;left:4vw;">
+  <div class="nucleus"></div>
+  <div class="orbit o1"><div class="electron"></div></div>
+  <div class="orbit o2"><div class="electron"></div></div>
+  <div class="orbit o3"><div class="electron"></div></div>
+</div>
+<div class="atom small" style="top:60vh;left:88vw;">
+  <div class="nucleus"></div>
+  <div class="orbit o1"><div class="electron"></div></div>
+  <div class="orbit o2"><div class="electron"></div></div>
+  <div class="orbit o3"><div class="electron"></div></div>
+</div>
+<div class="atom" style="top:82vh;left:12vw;">
+  <div class="nucleus"></div>
+  <div class="orbit o1"><div class="electron"></div></div>
+  <div class="orbit o2"><div class="electron"></div></div>
+  <div class="orbit o3"><div class="electron"></div></div>
+</div>
+<div class="atom small" style="top:20vh;left:80vw;">
+  <div class="nucleus"></div>
+  <div class="orbit o1"><div class="electron"></div></div>
+  <div class="orbit o2"><div class="electron"></div></div>
+  <div class="orbit o3"><div class="electron"></div></div>
+</div>
 
 
 <header>
   <nav>
-    <div class="logo">mavia<span class="cursor"></span></div>
+    <div class="logo"><span class="dyn-brand-lower">mavia</span><span class="cursor"></span></div>
     <div class="navlinks">
-      <a href="#about"><span class="num">01.</span>About</a>
-      <a href="#experience"><span class="num">02.</span>Experience</a>
-      <a href="#projects"><span class="num">03.</span>Projects</a>
-      <a href="#skills"><span class="num">04.</span>Stack</a>
-      <a href="#contact"><span class="num">05.</span>Contact</a>
+      <a href="#about">About</a>
+      <a href="#experience">Experience</a>
+      <a href="#projects">Projects</a>
+      <a href="#skills">Stack</a>
+      <a href="#contact">Contact</a>
     </div>
     <a href="#contact" class="nav-cta magnetic">Hire Me</a>
   </nav>
@@ -679,7 +661,7 @@
         <div class="terminal" id="codeWindow">
           <div class="terminal-bar">
             <span class="dots"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span></span>
-            <span class="terminal-filename">mavia.js</span>
+            <span class="terminal-filename dyn-brand-file">mavia.js</span>
           </div>
           <div class="terminal-body" id="codeBody"></div>
         </div>
@@ -694,12 +676,12 @@
           <a href="mailto:maviayaseen00@gmail.com" title="Email" aria-label="Email" class="magnetic dyn-email-href">✉</a>
           <a href="https://github.com/" title="GitHub" aria-label="GitHub" class="magnetic dyn-github-href">GH</a>
           <a href="https://linkedin.com/" title="LinkedIn" aria-label="LinkedIn" class="magnetic dyn-linkedin-href">in</a>
-          <a href="https://fiverr.com/" title="Fiverr" aria-label="Fiverr" class="magnetic">Fv</a>
+          <a href="https://fiverr.com/" title="Fiverr" aria-label="Fiverr" class="magnetic dyn-fiverr-href">Fv</a>
         </div>
       </div>
       <div class="hero-photo">
         <div class="photo-card">
-          <div class="photo-avatar dyn-initials">MY</div>
+          <div class="photo-avatar" id="photoAvatar"><span class="dyn-initials">MY</span></div>
         </div>
         <div class="photo-badge">
           <span class="badge-dot"></span>
@@ -721,17 +703,8 @@
         <div class="about-text">
           <p class="dyn-about-p1">I'm a software engineer with a strong foundation in full-stack web development, built through freelance client work and real product builds — from secure voting systems to e-commerce platforms and an AI-assisted umpiring tool.</p>
           <p class="dyn-about-p2">I care about turning requirements into working software: clean architecture, dependable code, and a good experience on both ends — for the client and the end user.</p>
-          <div class="soft-skills">
-            <span class="pill">Problem Solving</span>
-            <span class="pill">Time Management</span>
-            <span class="pill">Teamwork</span>
-            <span class="pill">Communication</span>
-          </div>
-          <div class="counter-row">
-            <div class="counter-item"><div class="counter-num" data-target="5">0</div><div class="counter-label">Projects Built</div></div>
-            <div class="counter-item"><div class="counter-num" data-target="6">0</div><div class="counter-label">Core Languages</div></div>
-            <div class="counter-item"><div class="counter-num" data-target="10">0</div><div class="counter-label">Tools &amp; Frameworks</div></div>
-          </div>
+          <div class="soft-skills" id="softSkillsRow"></div>
+          <div class="counter-row" id="counterRow"></div>
         </div>
         <div>
           <div class="stat-card"><div class="k">Location</div><div class="v dyn-location">Lahore, Pakistan</div></div>
@@ -803,7 +776,7 @@
   <div class="wrap">
     <div class="footer-grid">
       <div>
-        <div class="footer-brand">mavia<span class="accent">.</span></div>
+        <div class="footer-brand"><span class="dyn-brand-lower">mavia</span><span class="accent">.</span></div>
         <p class="footer-tagline dyn-footer-tagline">Software Engineer building reliable full-stack products with React, ASP.NET, and modern web tooling. Open to freelance and full-time work.</p>
         <div class="footer-social">
           <a href="mailto:maviayaseen00@gmail.com" title="Email" class="dyn-email-href">✉</a>
@@ -828,7 +801,7 @@
       </div>
     </div>
     <div class="footer-bottom">
-      <span>© 2026 Mavia Yaseen. All rights reserved.</span>
+      <span>© 2026 <span class="dyn-first-name">Mavia</span> <span class="dyn-last-name">Yaseen</span>. All rights reserved.</span>
       <span class="footer-made">Built with <span class="code">&lt;/&gt;</span>, <span class="heart">♥</span> and <span class="coffee">☕</span></span>
     </div>
   </div>
@@ -849,9 +822,9 @@
 
 <div class="ai-chat-panel" id="aiChatPanel">
   <div class="ai-chat-header">
-    <div class="ai-chat-avatar">MY</div>
+    <div class="ai-chat-avatar dyn-initials">MY</div>
     <div>
-      <div class="ai-chat-title">Mavia's Assistant</div>
+      <div class="ai-chat-title dyn-assistant-title">Mavia's Assistant</div>
       <div class="ai-chat-sub"><span class="dot"></span>Usually replies instantly</div>
     </div>
     <button class="ai-chat-close" id="aiChatClose" aria-label="Close chat">✕</button>
@@ -876,32 +849,6 @@
   window.addEventListener('scroll', ()=>{
     headerEl.classList.toggle('scrolled', window.scrollY > 40);
   });
-
-  // ---- Drifting code-symbol pattern ----
-  const SYMS = ['{ }','< / >','( )','01',';','=>','[ ]','#','01','< / >'];
-  const symLayer = document.createElement('div');
-  document.body.appendChild(symLayer);
-  const pageH = ()=>document.documentElement.scrollHeight;
-  const symCount = Math.min(18, Math.floor(window.innerWidth/90));
-  for(let i=0;i<symCount;i++){
-    const s = document.createElement('div');
-    s.className = 'symbol';
-    s.textContent = SYMS[i % SYMS.length];
-    s.style.fontSize = (14 + Math.random()*20) + 'px';
-    s.style.left = (Math.random()*96) + 'vw';
-    s.style.top = (Math.random()*100) + 'vh';
-    const dur = 18 + Math.random()*22;
-    const delay = -Math.random()*dur;
-    s.style.animation = `symFloat${i%3} ${dur}s ease-in-out ${delay}s infinite`;
-    symLayer.appendChild(s);
-  }
-  const styleTag = document.createElement('style');
-  styleTag.textContent = `
-    @keyframes symFloat0{0%,100%{transform:translate(0,0) rotate(0deg);}50%{transform:translate(30px,-40px) rotate(12deg);}}
-    @keyframes symFloat1{0%,100%{transform:translate(0,0) rotate(0deg);}50%{transform:translate(-25px,35px) rotate(-10deg);}}
-    @keyframes symFloat2{0%,100%{transform:translate(0,0) rotate(0deg);}50%{transform:translate(20px,25px) rotate(8deg);}}
-  `;
-  document.head.appendChild(styleTag);
 
   // ---- Custom cursor ----
   const cursorDot = document.getElementById('cursorDot');
@@ -929,52 +876,6 @@
     const pct = (h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100;
     progressBar.style.width = pct + '%';
   });
-
-  // ---- Particle network background ----
-  const canvas = document.getElementById('particleCanvas');
-  const ctx = canvas.getContext('2d');
-  let particles = [];
-  function resizeCanvas(){
-    canvas.width = window.innerWidth;
-    canvas.height = document.documentElement.scrollHeight;
-  }
-  function initParticles(){
-    const count = Math.min(70, Math.floor(window.innerWidth/22));
-    particles = Array.from({length:count}, ()=>({
-      x: Math.random()*canvas.width,
-      y: Math.random()*Math.min(canvas.height, window.innerHeight*1.2),
-      vx: (Math.random()-0.5)*0.3,
-      vy: (Math.random()-0.5)*0.3,
-    }));
-  }
-  function drawParticles(){
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    const viewTop = window.scrollY, viewBottom = viewTop + window.innerHeight;
-    particles.forEach(p=>{
-      p.x += p.vx; p.y += p.vy;
-      if(p.x<0||p.x>canvas.width) p.vx*=-1;
-      if(p.y<viewTop-50||p.y>viewBottom+50) p.vy*=-1;
-    });
-    for(let i=0;i<particles.length;i++){
-      for(let j=i+1;j<particles.length;j++){
-        const a=particles[i], b=particles[j];
-        if(a.y<viewTop-100||a.y>viewBottom+100) continue;
-        const d = Math.hypot(a.x-b.x, a.y-b.y);
-        if(d<130){
-          ctx.strokeStyle = `rgba(79,209,197,${0.12*(1-d/130)})`;
-          ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
-        }
-      }
-    }
-    particles.forEach(p=>{
-      if(p.y<viewTop-50||p.y>viewBottom+50) return;
-      ctx.fillStyle='rgba(242,169,59,0.55)';
-      ctx.beginPath(); ctx.arc(p.x,p.y,1.6,0,Math.PI*2); ctx.fill();
-    });
-    requestAnimationFrame(drawParticles);
-  }
-  resizeCanvas(); initParticles(); drawParticles();
-  window.addEventListener('resize', ()=>{ resizeCanvas(); initParticles(); });
 
   // ---- Animated code window in hero ----
   const codeLines = [
@@ -1033,26 +934,28 @@
   }, {threshold:0.15});
   revealEls.forEach(el=>io.observe(el));
 
-  // ---- Animated counters ----
-  document.querySelectorAll('.counter-num').forEach(el=>{
-    const target = parseInt(el.dataset.target, 10);
-    const counterIo = new IntersectionObserver((entries)=>{
-      entries.forEach(e=>{
-        if(e.isIntersecting){
-          let cur = 0;
-          const step = Math.max(1, Math.ceil(target/40));
-          const tick = ()=>{
-            cur = Math.min(target, cur+step);
-            el.textContent = cur;
-            if(cur<target) requestAnimationFrame(tick);
-          };
-          tick();
-          counterIo.unobserve(el);
-        }
-      });
-    }, {threshold:0.5});
-    counterIo.observe(el);
-  });
+  // ---- Animated counters (attached after dynamic render in applyContent) ----
+  function animateCounters(){
+    document.querySelectorAll('.counter-num').forEach(el=>{
+      const target = parseInt(el.dataset.target, 10) || 0;
+      const counterIo = new IntersectionObserver((entries)=>{
+        entries.forEach(e=>{
+          if(e.isIntersecting){
+            let cur = 0;
+            const step = Math.max(1, Math.ceil(target/40));
+            const tick = ()=>{
+              cur = Math.min(target, cur+step);
+              el.textContent = cur;
+              if(cur<target) requestAnimationFrame(tick);
+            };
+            tick();
+            counterIo.unobserve(el);
+          }
+        });
+      }, {threshold:0.5});
+      counterIo.observe(el);
+    });
+  }
 
   // ---- DATA ----
   // Fallback projects shown until the Supabase backend is connected (see SETUP.md)
@@ -1355,17 +1258,29 @@
     location:"Lahore, Pakistan", focus:"Full-Stack & ASP.NET (.NET)",
     education:"BS Software Engineering, University of the Punjab",
     email:"maviayaseen00@gmail.com", phone:"0300-7305663", whatsapp:"923007305663",
-    github_url:"https://github.com/", linkedin_url:"https://linkedin.com/",
+    github_url:"https://github.com/", linkedin_url:"https://linkedin.com/", fiverr_url:"https://fiverr.com/",
     contact_heading:"Have a project in mind?",
     contact_sub:"Have an idea? Let's transform it into a scalable, production-ready product that users love.",
     availability:"Available for freelance projects, collaborations, and full-time opportunities.",
     footer_tagline:"Software Engineer building reliable full-stack products with React, ASP.NET, and modern web tooling. Open to freelance and full-time work.",
+    photo_url:null,
+    soft_skills:"Problem Solving, Time Management, Teamwork, Communication",
+    stat1_num:5, stat1_label:"Projects Built",
+    stat2_num:6, stat2_label:"Core Languages",
+    stat3_num:10, stat3_label:"Tools & Frameworks",
   };
 
   function applyContent(c){
     document.querySelectorAll('.dyn-first-name').forEach(el=>el.textContent = c.first_name);
     document.querySelectorAll('.dyn-last-name').forEach(el=>el.textContent = c.last_name);
     document.querySelectorAll('.dyn-initials').forEach(el=>el.textContent = c.initials);
+    document.querySelectorAll('.dyn-brand-lower').forEach(el=>el.textContent = c.first_name.toLowerCase());
+    document.querySelectorAll('.dyn-brand-file').forEach(el=>el.textContent = c.first_name.toLowerCase()+'.js');
+    document.querySelectorAll('.dyn-assistant-title').forEach(el=>el.textContent = c.first_name+"'s Assistant");
+    if(c.photo_url){
+      const avatar = document.getElementById('photoAvatar');
+      if(avatar) avatar.innerHTML = `<img src="${c.photo_url}" alt="${c.first_name} ${c.last_name}">`;
+    }
     document.querySelectorAll('.dyn-handle').forEach(el=>el.textContent = c.handle);
     document.querySelectorAll('.dyn-role').forEach(el=>el.textContent = c.role);
     document.querySelectorAll('.dyn-bio').forEach(el=>el.textContent = c.bio);
@@ -1389,7 +1304,29 @@
     });
     document.querySelectorAll('.dyn-github-href').forEach(el=>el.href = c.github_url);
     document.querySelectorAll('.dyn-linkedin-href').forEach(el=>el.href = c.linkedin_url);
+    document.querySelectorAll('.dyn-fiverr-href').forEach(el=>el.href = c.fiverr_url);
+
+    const softSkillsRow = document.getElementById('softSkillsRow');
+    if(softSkillsRow){
+      softSkillsRow.innerHTML = (c.soft_skills||'').split(',').map(s=>s.trim()).filter(Boolean)
+        .map(s=>`<span class="pill">${s}</span>`).join('');
+    }
+    const counterRow = document.getElementById('counterRow');
+    if(counterRow){
+      const stats = [
+        [c.stat1_num, c.stat1_label], [c.stat2_num, c.stat2_label], [c.stat3_num, c.stat3_label]
+      ].filter(([n,l])=> n !== null && n !== undefined && l);
+      counterRow.innerHTML = stats.map(([n,l])=>`
+        <div class="counter-item"><div class="counter-num" data-target="${n}">0</div><div class="counter-label">${l}</div></div>
+      `).join('');
+      animateCounters();
+    }
+
+    SITE = c;
+    document.title = `${c.first_name} ${c.last_name} — ${c.role.split('—')[0].trim()}`;
   }
+
+  let SITE = DEFAULT_CONTENT;
 
   async function loadSiteProfile(){
     if(typeof supabaseClient !== 'undefined' && supabaseClient){
@@ -1404,39 +1341,48 @@
   loadSiteProfile();
 
   // ---- AI Assistant Chat ----
-  const KB = [
-    { keys:['project','built','made','portfolio work','crickvision','voting','ecommerce','e-commerce','delivery','driving school'],
-      a:"Mavia has built 5 projects: <b>CrickVision</b> (an AI-based umpire assistant), a secure <b>Online Voting System</b>, a full <b>E-Commerce Website</b>, an <b>Online Fast Food Delivery System</b>, and a <b>Driving School website</b> built on ASP.NET. Scroll down to the Projects section to see them all, or ask me about any specific one!" },
-    { keys:['education','study','studied','degree','university','school','punjab'],
-      a:"Mavia is completing a <b>BS in Software Engineering</b> at the <b>University of the Punjab</b> (2022–2026). He pairs that academic foundation with real freelance client work." },
-    { keys:['experience','work history','freelance','fiverr','client work','background'],
-      a:"Mavia works as a <b>Freelance Web Developer</b> on Fiverr and with local clients — gathering requirements directly from clients, building the solution, and delivering on time with a focus on quality." },
-    { keys:['skill','tech stack','technology','stack','language','framework','react','asp.net','python','c#','database','sql'],
-      a:"His core stack: <b>React</b>, <b>ASP.NET (.NET)</b>, C#, Python, C/C++, and Java on the language side, plus <b>MySQL, MongoDB, SQL Server</b> for databases, and Git, Docker, and AWS fundamentals for tooling. Check the Tech Stack section for the full breakdown!" },
-    { keys:['hire','price','cost','rate','quote','budget','charge','fee'],
-      a:"Mavia is currently <b>open for freelance and full-time work</b>! Pricing depends on project scope — the fastest way to get a quote is to message him directly. Want me to pull up the contact options?" },
-    { keys:['contact','email','phone','whatsapp','reach','message','talk','call'],
-      a:"You can reach Mavia directly: <br>✉ <b>maviayaseen00@gmail.com</b><br>📞 / 💬 <b>0300-7305663</b><br>Or just scroll to the Contact section and hit a button below!" },
-    { keys:['available','availability','open to work','open for work','free','busy'],
-      a:"Yes — Mavia is currently <b>available for freelance projects, collaborations, and full-time opportunities</b>. Good time to reach out!" },
-    { keys:['hello','hi','hey','yo','salam','assalam'],
-      a:"Hey there! 👋 I'm here to help you learn about Mavia — his projects, skills, experience, or how to get in touch. What would you like to know?" },
-    { keys:['who are you','what are you','bot','ai'],
-      a:"I'm a quick assistant here to answer questions about Mavia's work while he's away from the chat. Ask me about his projects, skills, education, or how to hire him!" },
-    { keys:['thank','thanks','thankyou'],
-      a:"You're welcome! If you're ready to start a project, tap the Email or WhatsApp button in the Contact section — Mavia usually replies fast. 🚀" },
-  ];
-  const FALLBACK = "I'm not totally sure about that one — but I can tell you about Mavia's <b>projects</b>, <b>skills</b>, <b>experience</b>, or how to <b>get in touch</b>. You can also email him directly at <b>maviayaseen00@gmail.com</b>.";
+  function buildKB(){
+    const n = SITE.first_name;
+    const projList = (projects && projects.length)
+      ? projects.slice(0,6).map(p=>p.title).join(', ')
+      : 'a few full-stack builds';
+    return [
+      { keys:['project','built','made','portfolio work'].concat(projects.map(p=>p.title.toLowerCase())),
+        a:`${n} has built these projects: <b>${projList}</b>. Scroll down to the Projects section to see them all, or ask me about any specific one!` },
+      { keys:['education','study','studied','degree','university','school'],
+        a:`${n}'s education: <b>${SITE.education}</b>.` },
+      { keys:['experience','work history','freelance','fiverr','client work','background'],
+        a:`${n}'s experience is listed in the Experience section — freelance and client work, plus any certificates completed. Scroll up to see the full timeline.` },
+      { keys:['skill','tech stack','technology','stack','language','framework','react','asp.net','python','c#','database','sql'],
+        a:`${n}'s core stack centers on <b>${SITE.focus}</b>. Check the Tech Stack section for the full categorized breakdown with proficiency levels!` },
+      { keys:['hire','price','cost','rate','quote','budget','charge','fee'],
+        a:`${n} is currently <b>open for freelance and full-time work</b>! Pricing depends on project scope — the fastest way to get a quote is to message directly. Want me to pull up the contact options?` },
+      { keys:['contact','email','phone','whatsapp','reach','message','talk','call'],
+        a:`You can reach ${n} directly: <br>✉ <b>${SITE.email}</b><br>📞 / 💬 <b>${SITE.phone}</b><br>Or just scroll to the Contact section and hit a button below!` },
+      { keys:['available','availability','open to work','open for work','free','busy'],
+        a:`Yes — ${SITE.availability}` },
+      { keys:['hello','hi','hey','yo','salam','assalam'],
+        a:`Hey there! 👋 I'm here to help you learn about ${n} — projects, skills, experience, or how to get in touch. What would you like to know?` },
+      { keys:['who are you','what are you','bot','ai'],
+        a:`I'm a quick assistant here to answer questions about ${n}'s work. Ask me about projects, skills, education, or how to get in touch!` },
+      { keys:['thank','thanks','thankyou'],
+        a:`You're welcome! If you're ready to start a project, tap the Email or WhatsApp button in the Contact section — ${n} usually replies fast. 🚀` },
+    ];
+  }
+  function buildFallback(){
+    return `I'm not totally sure about that one — but I can tell you about ${SITE.first_name}'s <b>projects</b>, <b>skills</b>, <b>experience</b>, or how to <b>get in touch</b>. You can also email directly at <b>${SITE.email}</b>.`;
+  }
 
   function matchKB(msg){
     const m = msg.toLowerCase();
+    const KB = buildKB();
     let best = null, bestScore = 0;
     KB.forEach(entry=>{
       let score = 0;
       entry.keys.forEach(k=>{ if(m.includes(k)) score++; });
       if(score > bestScore){ bestScore = score; best = entry; }
     });
-    return best ? best.a : FALLBACK;
+    return best ? best.a : buildFallback();
   }
 
   const chatWidget = document.getElementById('chatWidget');
@@ -1472,7 +1418,7 @@
     aiChatPanel.classList.add('open');
     if(!aiChatStarted){
       aiChatStarted = true;
-      addMsg("Hello, I am Mavia's assistant. How can I help you?", 'bot');
+      addMsg(`Hello, I am ${SITE.first_name}'s assistant. How can I help you?`, 'bot');
     }
   }
   chatWidget.addEventListener('click', ()=>{
