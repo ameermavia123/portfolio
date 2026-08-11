@@ -190,6 +190,8 @@
         <input id="fLive" placeholder="https://...">
         <label>GitHub link <span style="color:var(--muted);font-weight:400">(leave blank if none)</span></label>
         <input id="fGithub" placeholder="https://github.com/...">
+        <label>Display Order <span style="color:var(--muted);font-weight:400">(lower numbers show first, e.g. 1, 2, 3...)</span></label>
+        <input id="fOrder" type="number" placeholder="1">
         <label>Project Images <span style="color:var(--muted);font-weight:400">(select multiple — first one is the main thumbnail)</span></label>
         <input type="file" id="fImage" accept="image/*" multiple>
         <div class="hint" id="currentImgHint"></div>
@@ -226,6 +228,8 @@
         <label>Certificate Image <span style="color:var(--muted);font-weight:400">(optional — upload a screenshot/photo of the certificate)</span></label>
         <input type="file" id="expImage" accept="image/*">
         <div class="hint" id="expImgHint"></div>
+        <label>Display Order <span style="color:var(--muted);font-weight:400">(lower numbers show first, e.g. 1, 2, 3...)</span></label>
+        <input id="expOrder" type="number" placeholder="1">
         <button class="btn btn-primary" id="expSaveBtn">Save Experience</button>
         <button class="btn btn-ghost" id="expCancelBtn" style="display:none">Cancel edit</button>
         <div class="msg" id="expFormMsg"></div>
@@ -365,6 +369,7 @@ checkSession();
 const fTitle=document.getElementById('fTitle'), fSubtitle=document.getElementById('fSubtitle'),
       fDesc=document.getElementById('fDesc'), fTags=document.getElementById('fTags'),
       fLive=document.getElementById('fLive'), fGithub=document.getElementById('fGithub'),
+      fOrder=document.getElementById('fOrder'),
       fImage=document.getElementById('fImage'), editId=document.getElementById('editId'),
       formMsg=document.getElementById('formMsg'), formTitle=document.getElementById('formTitle'),
       cancelEditBtn=document.getElementById('cancelEditBtn'), currentImgHint=document.getElementById('currentImgHint'),
@@ -387,7 +392,7 @@ function removeExistingImage(i){
 
 function resetForm(){
   editId.value=''; fTitle.value=''; fSubtitle.value=''; fDesc.value=''; fTags.value='';
-  fLive.value=''; fGithub.value=''; fImage.value=''; formTitle.textContent='Add Project';
+  fLive.value=''; fGithub.value=''; fOrder.value=''; fImage.value=''; formTitle.textContent='Add Project';
   cancelEditBtn.style.display='none'; currentImgHint.textContent='';
   keptImages = []; renderExistingImages();
 }
@@ -428,6 +433,7 @@ document.getElementById('saveBtn').addEventListener('click', async ()=>{
     tags: fTags.value.split(',').map(t=>t.trim()).filter(Boolean),
     live_link: fLive.value.trim() || null,
     github_link: fGithub.value.trim() || null,
+    sort_order: fOrder.value.trim() ? parseInt(fOrder.value, 10) : 0,
   };
   if(finalImages.length){
     payload.images = finalImages;
@@ -454,7 +460,7 @@ document.getElementById('saveBtn').addEventListener('click', async ()=>{
 
 async function loadProjects(){
   const list = document.getElementById('projList');
-  const { data, error } = await supabaseClient.from('projects').select('*').order('created_at', {ascending:false});
+  const { data, error } = await supabaseClient.from('projects').select('*').order('sort_order', {ascending:true});
   if(error){ list.innerHTML = `<div class="msg err">${error.message}</div>`; return; }
   if(!data.length){ list.innerHTML = `<div class="hint">No projects yet — add your first one above.</div>`; return; }
   list.innerHTML = data.map(p=>{
@@ -483,6 +489,7 @@ function editProject(p){
   fTags.value = (p.tags||[]).join(', ');
   fLive.value = p.live_link || '';
   fGithub.value = p.github_link || '';
+  fOrder.value = (p.sort_order !== null && p.sort_order !== undefined) ? p.sort_order : '';
   formTitle.textContent = 'Edit Project';
   cancelEditBtn.style.display = 'inline-block';
   keptImages = (p.images && p.images.length) ? [...p.images] : (p.image_url ? [p.image_url] : []);
@@ -501,13 +508,13 @@ async function deleteProject(id){
 // ---- Experience CRUD ----
 const expType=document.getElementById('expType'), expRole=document.getElementById('expRole'), expCompany=document.getElementById('expCompany'),
       expDesc=document.getElementById('expDesc'), expCredential=document.getElementById('expCredential'), expEditId=document.getElementById('expEditId'),
-      expImage=document.getElementById('expImage'), expImgHint=document.getElementById('expImgHint'),
+      expImage=document.getElementById('expImage'), expImgHint=document.getElementById('expImgHint'), expOrder=document.getElementById('expOrder'),
       expFormMsg=document.getElementById('expFormMsg'), expFormTitle=document.getElementById('expFormTitle'),
       expCancelBtn=document.getElementById('expCancelBtn');
 
 function resetExpForm(){
   expEditId.value=''; expType.value='job'; expRole.value=''; expCompany.value=''; expDesc.value=''; expCredential.value='';
-  expImage.value=''; expImgHint.textContent='';
+  expImage.value=''; expImgHint.textContent=''; expOrder.value='';
   expFormTitle.textContent='Add Experience'; expCancelBtn.style.display='none';
 }
 expCancelBtn.addEventListener('click', resetExpForm);
@@ -536,6 +543,7 @@ document.getElementById('expSaveBtn').addEventListener('click', async ()=>{
     company: expCompany.value.trim() || null,
     description: expDesc.value.trim() || null,
     credential_url: expCredential.value.trim() || null,
+    sort_order: expOrder.value.trim() ? parseInt(expOrder.value, 10) : 0,
   };
   if(image_url) payload.image_url = image_url;
 
@@ -579,6 +587,7 @@ function editExperience(x){
   expCredential.value = x.credential_url || '';
   expImage.value = '';
   expImgHint.textContent = x.image_url ? 'Leave image blank to keep the current picture.' : '';
+  expOrder.value = (x.sort_order !== null && x.sort_order !== undefined) ? x.sort_order : '';
   expFormTitle.textContent = 'Edit Experience'; expCancelBtn.style.display = 'inline-block';
   window.scrollTo({top:0, behavior:'smooth'});
 }
