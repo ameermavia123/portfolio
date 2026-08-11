@@ -195,6 +195,7 @@
         <label>Project Images <span style="color:var(--muted);font-weight:400">(select multiple — first one is the main thumbnail)</span></label>
         <input type="file" id="fImage" accept="image/*" multiple>
         <div class="hint" id="currentImgHint"></div>
+        <div class="hint">First image shown is the cover/thumbnail. Use ‹ › to reorder, ✕ to remove.</div>
         <div id="existingImages" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px"></div>
         <button class="btn btn-primary" id="saveBtn">Save Project</button>
         <button class="btn btn-ghost" id="cancelEditBtn" style="display:none">Cancel edit</button>
@@ -375,18 +376,27 @@ const fTitle=document.getElementById('fTitle'), fSubtitle=document.getElementByI
       cancelEditBtn=document.getElementById('cancelEditBtn'), currentImgHint=document.getElementById('currentImgHint'),
       existingImagesEl=document.getElementById('existingImages');
 
-let keptImages = []; // images kept when editing (existing minus removed)
+let keptImages = []; // images kept when editing (existing minus removed), order = display order
 
 function renderExistingImages(){
   existingImagesEl.innerHTML = keptImages.map((url, i)=>`
     <div class="img-chip">
       <img src="${url}">
-      <button type="button" onclick="removeExistingImage(${i})" aria-label="Remove image">✕</button>
+      ${i===0 ? '<span style="position:absolute;bottom:2px;left:2px;background:rgba(0,0,0,.7);color:var(--amber);font-size:9px;padding:1px 4px;border-radius:4px;font-family:var(--font-mono)">cover</span>' : ''}
+      <button type="button" onclick="removeExistingImage(${i})" aria-label="Remove image" style="top:2px;right:2px;">✕</button>
+      ${i>0 ? `<button type="button" onclick="moveExistingImage(${i},-1)" aria-label="Move left" style="top:2px;left:2px;right:auto;">‹</button>` : ''}
+      ${i<keptImages.length-1 ? `<button type="button" onclick="moveExistingImage(${i},1)" aria-label="Move right" style="bottom:2px;right:2px;top:auto;">›</button>` : ''}
     </div>
   `).join('');
 }
 function removeExistingImage(i){
   keptImages.splice(i, 1);
+  renderExistingImages();
+}
+function moveExistingImage(i, dir){
+  const j = i + dir;
+  if(j < 0 || j >= keptImages.length) return;
+  [keptImages[i], keptImages[j]] = [keptImages[j], keptImages[i]];
   renderExistingImages();
 }
 
