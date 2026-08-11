@@ -454,6 +454,9 @@
   }
   .tl-item:hover{border-color:var(--teal);transform:translateY(-4px);}
   .tl-item:hover .tl-expand-hint{opacity:1;}
+  .tl-top-row{display:flex;align-items:flex-start;gap:12px;margin-bottom:4px;}
+  .tl-thumb{width:48px;height:48px;border-radius:8px;object-fit:cover;flex-shrink:0;border:1px solid var(--border);}
+  .tl-top-text{flex-grow:1;min-width:0;}
   .tl-role{font-family:var(--font-display);font-weight:600;font-size:18px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
   .tl-meta{font-family:var(--font-mono);color:var(--teal);font-size:13px;margin:2px 0 6px;}
   .tl-desc{
@@ -1176,7 +1179,7 @@
 
   async function loadPublicProjects(){
     if(typeof supabaseClient !== 'undefined' && supabaseClient){
-      const { data, error } = await supabaseClient.from('projects').select('*').order('created_at', {ascending:false});
+      const { data, error } = await supabaseClient.from('projects').select('*').order('sort_order', {ascending:true});
       if(!error && data && data.length){
         projects = data.map((p,i)=>({...p, c: THUMB_PAIRS[i % THUMB_PAIRS.length]}));
       }
@@ -1398,8 +1401,13 @@
       const type = x.type === 'certificate' ? 'certificate' : 'job';
       return `
       <div class="tl-item" data-exp-index="${i}">
-        <div class="tl-role">${x.role} <span class="tl-badge ${type}">${type === 'certificate' ? 'Certificate' : 'Experience'}</span></div>
-        ${x.company ? `<div class="tl-meta">${x.company}</div>` : ''}
+        <div class="tl-top-row">
+          ${x.image_url ? `<img src="${x.image_url}" alt="${x.role}" class="tl-thumb">` : ''}
+          <div class="tl-top-text">
+            <div class="tl-role">${x.role} <span class="tl-badge ${type}">${type === 'certificate' ? 'Certificate' : 'Experience'}</span></div>
+            ${x.company ? `<div class="tl-meta">${x.company}</div>` : ''}
+          </div>
+        </div>
         ${x.description ? `<div class="tl-desc">${x.description}</div>` : ''}
         <div class="tl-expand-hint">Click to view full details →</div>
       </div>
