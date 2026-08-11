@@ -32,7 +32,7 @@
     overflow-x:hidden;
     cursor:none;
   }
-  @media (max-width:900px), (hover:none){ body{cursor:auto;} #cursorDot,#cursorRing{display:none;} }
+  @media (max-width:900px), (hover:none){ body{cursor:auto;} #cursorDot{display:none;} }
   @media (prefers-reduced-motion: reduce){
     html{scroll-behavior:auto;}
     *{animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important;}
@@ -41,18 +41,15 @@
   .wrap{max-width:1080px;margin:0 auto;padding:0 24px;}
   ::selection{background:var(--amber);color:#0B0F1A;}
 
-  /* custom cursor */
-  #cursorDot,#cursorRing{
-    position:fixed;top:0;left:0;border-radius:50%;pointer-events:none;z-index:9999;
-    transform:translate(-50%,-50%);
+  /* custom cursor — single simple dot, GPU-composited, no per-frame JS loop */
+  #cursorDot{
+    position:fixed;top:0;left:0;width:9px;height:9px;border-radius:50%;
+    background:var(--amber);pointer-events:none;z-index:9999;
+    transform:translate3d(-50%,-50%,0);
+    transition:transform 90ms linear, width .15s, height .15s, background .15s;
+    will-change:transform;
   }
-  #cursorDot{width:6px;height:6px;background:var(--amber);}
-  #cursorRing{
-    width:32px;height:32px;border:1px solid var(--teal);
-    transition:width .2s,height .2s,border-color .2s,opacity .2s;
-    opacity:.6;
-  }
-  #cursorRing.active{width:52px;height:52px;border-color:var(--amber);opacity:.9;}
+  #cursorDot.active{width:16px;height:16px;background:var(--teal);}
 
   /* scroll progress bar */
   #progressBar{
@@ -548,21 +545,21 @@
   }
   .filter-btn:hover{color:var(--teal);border-color:var(--teal);}
   .filter-btn.active{background:var(--amber);color:#0B0F1A;border-color:var(--amber);}
-  .proj-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:22px;perspective:1000px;}
+  .proj-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:22px;}
   .proj-card{
     background:var(--surface);border:1px solid var(--border);border-radius:14px;
-    overflow:hidden;transition:transform .15s ease, border-color .25s;
-    display:flex;flex-direction:column;transform-style:preserve-3d;will-change:transform;
+    overflow:hidden;transition:transform .25s ease, border-color .25s, box-shadow .25s;
+    display:flex;flex-direction:column;
   }
-  .proj-card:hover{border-color:var(--teal);}
+  .proj-card:hover{border-color:var(--teal);transform:translateY(-6px);box-shadow:0 20px 40px -20px rgba(0,0,0,.5);}
   .proj-thumb{
-    height:150px;position:relative;overflow:hidden;cursor:pointer;
+    height:190px;position:relative;overflow:hidden;cursor:pointer;
     background:
       linear-gradient(135deg, var(--thumb1,#1A2033), var(--thumb2,#0B0F1A));
     display:flex;align-items:center;justify-content:center;
   }
-  .proj-thumb img{width:100%;height:100%;object-fit:cover;position:relative;z-index:1;transition:transform .3s;}
-  .proj-card:hover .proj-thumb img{transform:scale(1.05);}
+  .proj-thumb img{width:100%;height:100%;object-fit:cover;position:relative;z-index:1;transition:transform .35s ease;}
+  .proj-card:hover .proj-thumb img{transform:scale(1.04);}
   .proj-thumb::before{
     content:"";position:absolute;top:0;left:0;right:0;height:28px;
     background:var(--surface-2);border-bottom:1px solid var(--border);z-index:2;
@@ -711,7 +708,6 @@
 </head>
 <body>
 <div id="cursorDot"></div>
-<div id="cursorRing"></div>
 <div id="progressBar"></div>
 <canvas id="particleCanvas"></canvas>
 <div class="aurora-layer" id="auroraLayer">
@@ -958,23 +954,14 @@
     headerEl.classList.toggle('scrolled', window.scrollY > 40);
   });
 
-  // ---- Custom cursor ----
+  // ---- Custom cursor (simple: direct position, CSS handles the smoothing) ----
   const cursorDot = document.getElementById('cursorDot');
-  const cursorRing = document.getElementById('cursorRing');
-  let mx=0,my=0, rx=0, ry=0;
   window.addEventListener('mousemove', (e)=>{
-    mx=e.clientX; my=e.clientY;
-    cursorDot.style.left = mx+'px'; cursorDot.style.top = my+'px';
-  });
-  function ringLoop(){
-    rx += (mx-rx)*0.18; ry += (my-ry)*0.18;
-    cursorRing.style.left = rx+'px'; cursorRing.style.top = ry+'px';
-    requestAnimationFrame(ringLoop);
-  }
-  ringLoop();
+    cursorDot.style.transform = `translate3d(${e.clientX}px, ${e.clientY}px, 0) translate3d(-50%,-50%,0)`;
+  }, { passive:true });
   document.querySelectorAll('a, button, .filter-btn, .proj-card').forEach(el=>{
-    el.addEventListener('mouseenter', ()=>cursorRing.classList.add('active'));
-    el.addEventListener('mouseleave', ()=>cursorRing.classList.remove('active'));
+    el.addEventListener('mouseenter', ()=>cursorDot.classList.add('active'));
+    el.addEventListener('mouseleave', ()=>cursorDot.classList.remove('active'));
   });
 
   // ---- Scroll progress bar ----
@@ -1000,12 +987,13 @@
     let mouse = { x: -9999, y: -9999, active: false };
     let parallax = { x: 0, y: 0 };
     let targetParallax = { x: 0, y: 0 };
+    const CELL = 130; // spatial grid cell size, tuned to link distance
 
     function resize(){
       W = canvas.width = window.innerWidth;
       H = canvas.height = window.innerHeight;
-      const density = isMobile ? 26000 : 16000;
-      const count = Math.min(70, Math.floor((W*H)/density));
+      const density = isMobile ? 20000 : 11000;
+      const count = Math.min(110, Math.floor((W*H)/density));
       particles = Array.from({length: count}, ()=>({
         x: Math.random()*W, y: Math.random()*H,
         vx: (Math.random()-0.5)*0.18, vy: (Math.random()-0.5)*0.18,
@@ -1016,6 +1004,10 @@
     function step(){
       ctx.clearRect(0,0,W,H);
 
+      // build a spatial grid so we only compare nearby particles, not every pair
+      const grid = new Map();
+      function cellKey(x,y){ return (Math.floor(x/CELL))+'_'+(Math.floor(y/CELL)); }
+
       particles.forEach(p=>{
         p.x += p.vx; p.y += p.vy;
         if(p.x < 0 || p.x > W) p.vx *= -1;
@@ -1024,26 +1016,46 @@
         if(mouse.active){
           const dx = p.x - mouse.x, dy = p.y - mouse.y;
           const dist = Math.hypot(dx, dy);
-          if(dist < 140){
-            const force = (140 - dist) / 140 * 0.04;
-            p.x += (dx/dist) * force;
-            p.y += (dy/dist) * force;
+          if(dist < 190){
+            const force = (190 - dist) / 190;
+            const push = force * 3.2;
+            p.x += (dx/dist) * push;
+            p.y += (dy/dist) * push;
+            p.vx += (dx/dist) * force * 0.05;
+            p.vy += (dy/dist) * force * 0.05;
+          }
+        }
+        p.vx *= 0.985; p.vy *= 0.985;
+        const minSpeed = 0.05;
+        if(Math.hypot(p.vx,p.vy) < minSpeed){
+          p.vx += (Math.random()-0.5)*0.02;
+          p.vy += (Math.random()-0.5)*0.02;
+        }
+
+        const key = cellKey(p.x,p.y);
+        if(!grid.has(key)) grid.set(key, []);
+        grid.get(key).push(p);
+      });
+
+      const maxLinkDist = isMobile ? 90 : 130;
+      ctx.lineWidth = 1;
+      particles.forEach(p=>{
+        const cx = Math.floor(p.x/CELL), cy = Math.floor(p.y/CELL);
+        for(let gx=cx-1; gx<=cx+1; gx++){
+          for(let gy=cy-1; gy<=cy+1; gy++){
+            const neighbors = grid.get(gx+'_'+gy);
+            if(!neighbors) continue;
+            neighbors.forEach(o=>{
+              if(o === p) return;
+              const d = Math.hypot(p.x-o.x, p.y-o.y);
+              if(d < maxLinkDist){
+                ctx.strokeStyle = `rgba(148,180,255,${0.1*(1-d/maxLinkDist)})`;
+                ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(o.x,o.y); ctx.stroke();
+              }
+            });
           }
         }
       });
-
-      const maxLinkDist = isMobile ? 90 : 120;
-      for(let i=0;i<particles.length;i++){
-        for(let j=i+1;j<particles.length;j++){
-          const a = particles[i], b = particles[j];
-          const d = Math.hypot(a.x-b.x, a.y-b.y);
-          if(d < maxLinkDist){
-            ctx.strokeStyle = `rgba(148,180,255,${0.12*(1-d/maxLinkDist)})`;
-            ctx.lineWidth = 1;
-            ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
-          }
-        }
-      }
       particles.forEach(p=>{
         ctx.fillStyle = 'rgba(180,200,255,0.55)';
         ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill();
@@ -1066,14 +1078,14 @@
         mouse.x = e.clientX; mouse.y = e.clientY; mouse.active = true;
         cursorGlow.style.transform = `translate(${e.clientX}px, ${e.clientY}px) translate(-50%,-50%)`;
         cursorGlow.classList.add('active');
-        targetParallax.x = (e.clientX / W - 0.5) * 18;
-        targetParallax.y = (e.clientY / H - 0.5) * 18;
+        targetParallax.x = -(e.clientX / W - 0.5) * 34;
+        targetParallax.y = -(e.clientY / H - 0.5) * 34;
       });
       window.addEventListener('mouseleave', ()=> cursorGlow.classList.remove('active'));
 
       function parallaxLoop(){
-        parallax.x += (targetParallax.x - parallax.x) * 0.04;
-        parallax.y += (targetParallax.y - parallax.y) * 0.04;
+        parallax.x += (targetParallax.x - parallax.x) * 0.07;
+        parallax.y += (targetParallax.y - parallax.y) * 0.07;
         auroraLayer.style.transform = `translate(${parallax.x}px, ${parallax.y}px)`;
         orbLayer.style.transform = `translate(${parallax.x*1.6}px, ${parallax.y*1.6}px)`;
         requestAnimationFrame(parallaxLoop);
@@ -1232,14 +1244,7 @@
 
   function attachTilt(){
     document.querySelectorAll('.proj-card').forEach(card=>{
-      card.addEventListener('mousemove', (e)=>{
-        const r = card.getBoundingClientRect();
-        const px = (e.clientX - r.left)/r.width - 0.5;
-        const py = (e.clientY - r.top)/r.height - 0.5;
-        card.style.transform = `rotateY(${px*8}deg) rotateX(${-py*8}deg) translateY(-4px)`;
-      });
-      card.addEventListener('mouseleave', ()=>{ card.style.transform = 'rotateY(0) rotateX(0) translateY(0)'; });
-      card.addEventListener('mouseenter', ()=>{ cursorRing && cursorRing.classList.add('active'); });
+      card.addEventListener('mouseenter', ()=>{ cursorDot && cursorDot.classList.add('active'); });
     });
   }
 
